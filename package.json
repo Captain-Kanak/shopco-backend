@@ -2,13 +2,14 @@
   "name": "shopco-backend",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/src/server.js"
   },
+  "type": "module",
   "keywords": [],
   "author": "",
   "license": "ISC",
