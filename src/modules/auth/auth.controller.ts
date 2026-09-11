@@ -15,7 +15,15 @@ const registerUser = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const verifyEmail = catchAsync(async (req: Request, res: Response) => {});
+const verifyEmail = catchAsync(async (req: Request, res: Response) => {
+  await authService.verifyEmail(req.body);
+
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Email verified successfully",
+  });
+});
 
 const loginUser = catchAsync(async (req: Request, res: Response) => {});
 

@@ -12,6 +12,10 @@ interface ENV {
   BETTER_AUTH_SECRET: string;
   BETTER_AUTH_SESSION_EXPIRES_IN: string;
   BETTER_AUTH_SESSION_UPDATE_AGE: string;
+  EMAIL_SENDER_SMTP_HOST: string;
+  EMAIL_SENDER_SMTP_PORT: string;
+  EMAIL_SENDER_SMTP_USER: string;
+  EMAIL_SENDER_SMTP_PASS: string;
 }
 
 function loadEnv(): ENV {
@@ -24,6 +28,10 @@ function loadEnv(): ENV {
     "BETTER_AUTH_SECRET",
     "BETTER_AUTH_SESSION_EXPIRES_IN",
     "BETTER_AUTH_SESSION_UPDATE_AGE",
+    "EMAIL_SENDER_SMTP_HOST",
+    "EMAIL_SENDER_SMTP_PORT",
+    "EMAIL_SENDER_SMTP_USER",
+    "EMAIL_SENDER_SMTP_PASS",
   ];
 
   requiredEnvVariables.forEach((envVariable) => {
@@ -45,6 +53,10 @@ function loadEnv(): ENV {
       .BETTER_AUTH_SESSION_EXPIRES_IN as string,
     BETTER_AUTH_SESSION_UPDATE_AGE: process.env
       .BETTER_AUTH_SESSION_UPDATE_AGE as string,
+    EMAIL_SENDER_SMTP_HOST: process.env.EMAIL_SENDER_SMTP_HOST as string,
+    EMAIL_SENDER_SMTP_PORT: process.env.EMAIL_SENDER_SMTP_PORT as string,
+    EMAIL_SENDER_SMTP_USER: process.env.EMAIL_SENDER_SMTP_USER as string,
+    EMAIL_SENDER_SMTP_PASS: process.env.EMAIL_SENDER_SMTP_PASS as string,
   };
 }
 

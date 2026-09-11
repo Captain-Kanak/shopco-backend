@@ -1,6 +1,6 @@
 import status from "http-status";
 import { prisma } from "../../lib/prisma.js";
-import { Register } from "./auth.type.js";
+import { Register, VerifyEmail } from "./auth.type.js";
 import AppError from "../../errors/app-error.js";
 import { auth } from "../../lib/auth.js";
 import { User } from "@prisma/client";
@@ -45,7 +45,31 @@ const registerUser = async (payload: Register): Promise<User> => {
   }
 };
 
-const verifyEmail = async (payload: { email: string; password: string }) => {};
+const verifyEmail = async (payload: VerifyEmail): Promise<void> => {
+  try {
+    const { email, otp } = payload;
+
+    const result = await auth.api.verifyEmailOTP({
+      body: {
+        email,
+        otp,
+      },
+    });
+
+    if (result.status && !result.user.emailVerified) {
+      await prisma.user.update({
+        where: {
+          email,
+        },
+        data: {
+          emailVerified: true,
+        },
+      });
+    }
+  } catch (error) {
+    throw error;
+  }
+};
 
 const loginUser = async (payload: { email: string; password: string }) => {};
 
