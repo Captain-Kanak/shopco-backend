@@ -15,6 +15,12 @@ const registerUser = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const verifyEmail = catchAsync(async (req: Request, res: Response) => {});
+
+const loginUser = catchAsync(async (req: Request, res: Response) => {});
+
 export const authController = {
   registerUser,
+  verifyEmail,
+  loginUser,
 };

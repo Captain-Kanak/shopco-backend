@@ -45,6 +45,12 @@ const registerUser = async (payload: Register): Promise<User> => {
   }
 };
 
+const verifyEmail = async (payload: { email: string; password: string }) => {};
+
+const loginUser = async (payload: { email: string; password: string }) => {};
+
 export const authService = {
   registerUser,
+  verifyEmail,
+  loginUser,
 };
