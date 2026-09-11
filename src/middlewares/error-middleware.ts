@@ -5,6 +5,8 @@ import AppError from "../errors/app-error.js";
 import { ErrorSource } from "../types/error.type.js";
 import * as z from "zod";
 import { handleZodError } from "../errors/zod-error.js";
+import { Prisma } from "@prisma/client";
+import { handlePrismaError } from "../errors/prisma-error.js";
 
 async function errorMiddleware(
   err: Error,
@@ -26,9 +28,13 @@ async function errorMiddleware(
     statusCode = simplifiedZodErrors.statusCode;
     message = simplifiedZodErrors.message;
     errorSources = [...simplifiedZodErrors.errorSources];
-  }
+  } else if (err instanceof Prisma.PrismaClientKnownRequestError) {
+    const simplifiedPrismaErrors = handlePrismaError(err);
 
-  if (err instanceof AppError) {
+    statusCode = simplifiedPrismaErrors.statusCode;
+    message = simplifiedPrismaErrors.message;
+    errorSources = [...simplifiedPrismaErrors.errorSources];
+  } else if (err instanceof AppError) {
     statusCode = err.statusCode;
     message = err.message;
   }
