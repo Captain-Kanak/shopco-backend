@@ -1,0 +1,16 @@
+model Brand {
+    id          String  @id @default(uuid(7))
+    name        String  @db.VarChar(255)
+    logo        String? @db.Text
+    description String? @db.Text
+
+    products Product[]
+
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+    deletedAt DateTime?
+
+    @@unique([name])
+    @@index([deletedAt])
+    @@map("brand")
+}

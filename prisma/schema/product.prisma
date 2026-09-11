@@ -1,0 +1,69 @@
+model Product {
+    id                 String @id @default(uuid(7))
+    title              String @db.VarChar(200)
+    slug               String @db.VarChar(255)
+    description        String @db.Text
+    discountPercentage Int    @default(0)
+
+    brandId String
+    brand   Brand  @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+    categoryId String
+    category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+    productColors ProductColor[]
+
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+    deletedAt DateTime?
+
+    @@unique([slug])
+    @@index([brandId])
+    @@index([categoryId])
+    @@index([deletedAt])
+    @@map("product")
+}
+
+model ProductColor {
+    id       String  @id @default(uuid(7))
+    imageUrl String? @db.Text
+    color    String  @db.VarChar(100)
+
+    productId String
+    product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+    productVariants ProductVariant[]
+
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+    deletedAt DateTime?
+
+    @@unique([color, productId])
+    @@index([productId])
+    @@index([deletedAt])
+    @@map("product_color")
+}
+
+model ProductVariant {
+    id    String  @id @default(uuid(7))
+    sku   String  @unique @db.VarChar(255)
+    stock Int     @default(0)
+    price Decimal @db.Decimal(10, 2)
+
+    size ProductSize
+
+    colorId String
+    color   ProductColor @relation(fields: [colorId], references: [id], onDelete: Cascade)
+
+    carts      Cart[]
+    orderItems OrderItem[]
+
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+    deletedAt DateTime?
+
+    @@unique([size, colorId])
+    @@index([colorId])
+    @@index([deletedAt])
+    @@map("product_variant")
+}

@@ -1,0 +1,24 @@
+model Payment {
+    id            String  @id @default(uuid(7))
+    amount        Decimal @db.Decimal(10, 2)
+    transactionId String
+
+    status PaymentStatus @default(UNPAID)
+    method PaymentMethod
+
+    orderId String
+    order   Order  @relation(fields: [orderId], references: [id])
+
+    userId String
+    user   User   @relation(fields: [userId], references: [id])
+
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+    deletedAt DateTime?
+
+    @@unique([orderId])
+    @@unique([transactionId])
+    @@index([userId])
+    @@index([deletedAt])
+    @@map("payment")
+}
