@@ -9,13 +9,10 @@ enum UserStatus {
     BANNED
 }
 
-enum ProductSize {
-    XS
-    S
-    M
-    L
-    XL
-    XXL
+enum ProductStatus {
+    DRAFT
+    ACTIVE
+    ARCHIVED
 }
 
 enum OrderStatus {

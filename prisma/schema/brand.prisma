@@ -1,6 +1,7 @@
 model Brand {
     id          String  @id @default(uuid(7))
     name        String  @db.VarChar(255)
+    slug        String  @db.VarChar(255)
     logo        String? @db.Text
     description String? @db.Text
 
@@ -10,7 +11,7 @@ model Brand {
     updatedAt DateTime  @updatedAt
     deletedAt DateTime?
 
-    @@unique([name])
+    @@unique([slug])
     @@index([deletedAt])
     @@map("brand")
 }
