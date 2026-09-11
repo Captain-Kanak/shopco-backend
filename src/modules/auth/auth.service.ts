@@ -1,6 +1,6 @@
 import status from "http-status";
 import { prisma } from "../../lib/prisma.js";
-import { LoginUser, RegisterUser, VerifyEmail } from "./auth.type.js";
+import { LoginUser, RegisterUser, VerifyEmail } from "./auth.interface.js";
 import AppError from "../../errors/app-error.js";
 import { auth } from "../../lib/auth.js";
 import { User } from "@prisma/client";
