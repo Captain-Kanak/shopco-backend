@@ -6,6 +6,7 @@ interface ResponseData<T = unknown> {
   message: string;
   data?: T;
   error?: unknown;
+  [key: string]: unknown;
 }
 
 export const sendResponse = <T>(res: Response, resData: ResponseData<T>) => {
