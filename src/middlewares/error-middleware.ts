@@ -26,7 +26,6 @@ async function errorMiddleware(
     statusCode,
     success: false,
     message,
-    error: err,
     ...(env.NODE_ENV === "development" && { stack: err.stack }),
   });
 }
