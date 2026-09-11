@@ -6,6 +6,7 @@ import status from "http-status";
 import { env } from "../../config/env.js";
 import { tokenUtils } from "../../utils/token.js";
 import { cookieUtils } from "../../utils/cookie.js";
+import { User } from "@prisma/client";
 
 const registerUser = catchAsync(async (req: Request, res: Response) => {
   const result = await authService.registerUser(req.body);
@@ -79,10 +80,22 @@ const googleLoginSuccess = catchAsync(async (req: Request, res: Response) => {
   return res.redirect(`${env.FRONTEND_URL}${finalRedirectPath}?auth=success`);
 });
 
+const getMe = catchAsync(async (req: Request, res: Response) => {
+  const user = req.user as User;
+
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "User fetched successfully",
+    data: user,
+  });
+});
+
 export const authController = {
   registerUser,
   verifyEmail,
   loginUser,
   googleLogin,
   googleLoginSuccess,
+  getMe,
 };

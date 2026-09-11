@@ -2,6 +2,7 @@ import { Router } from "express";
 import { authController } from "./auth.controller.js";
 import { authValidation } from "./auth.validation.js";
 import { validateRequestBody } from "../../middlewares/zod-middleware.js";
+import { authMiddleware } from "../../middlewares/auth-middleware.js";
 
 const router: Router = Router();
 
@@ -27,5 +28,7 @@ router.post(
 router.get("/login/google", authController.googleLogin);
 
 router.get("/google/success", authController.googleLoginSuccess);
+
+router.get("/get-me", authMiddleware(), authController.getMe);
 
 export { router as authRouter };
