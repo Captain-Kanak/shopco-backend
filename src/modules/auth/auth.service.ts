@@ -4,6 +4,7 @@ import { LoginUser, RegisterUser, VerifyEmail } from "./auth.type.js";
 import AppError from "../../errors/app-error.js";
 import { auth } from "../../lib/auth.js";
 import { User } from "@prisma/client";
+import { Session } from "better-auth";
 
 const registerUser = async (payload: RegisterUser): Promise<User> => {
   const { name, email, password } = payload;
@@ -108,8 +109,32 @@ const loginUser = async (
   }
 };
 
+const googleLoginSuccess = async (
+  sessionToken: string,
+): Promise<{ session: Session | null; user: User | null }> => {
+  try {
+    const session = await auth.api.getSession({
+      headers: {
+        Cookie: `better-auth.session_token=${sessionToken}`,
+      },
+    });
+
+    if (!session?.session || !session?.user) {
+      return { session: null, user: null };
+    }
+
+    return {
+      session: session.session,
+      user: session.user as User,
+    };
+  } catch (error) {
+    throw error;
+  }
+};
+
 export const authService = {
   registerUser,
   verifyEmail,
   loginUser,
+  googleLoginSuccess,
 };

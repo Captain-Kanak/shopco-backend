@@ -11,6 +11,8 @@ import { indexRouter } from "./routes/index.js";
 import errorMiddleware from "./middlewares/error-middleware.js";
 import path from "path";
 import cookieParser from "cookie-parser";
+import { toNodeHandler } from "better-auth/node";
+import { auth } from "./lib/auth.js";
 
 const app: Application = express();
 
@@ -33,6 +35,8 @@ app.get("/", (req: Request, res: Response) => {
     message: "ShopCo Server is Running Successfully",
   });
 });
+
+app.use("/api/auth", toNodeHandler(auth));
 
 app.use("/api/v1", indexRouter);
 

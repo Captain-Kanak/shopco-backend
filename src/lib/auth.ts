@@ -110,6 +110,12 @@ export const auth = betterAuth({
       otpLength: 6,
     }),
   ],
+  socialProviders: {
+    google: {
+      clientId: env.GOOGLE_CLIENT_ID,
+      clientSecret: env.GOOGLE_CLIENT_SECRET,
+    },
+  },
   user: {
     additionalFields: {
       role: {
