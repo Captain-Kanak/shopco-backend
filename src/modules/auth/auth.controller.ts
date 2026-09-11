@@ -25,7 +25,16 @@ const verifyEmail = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const loginUser = catchAsync(async (req: Request, res: Response) => {});
+const loginUser = catchAsync(async (req: Request, res: Response) => {
+  const result = await authService.loginUser(req.body);
+
+  return sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "User logged in successfully",
+    data: result,
+  });
+});
 
 export const authController = {
   registerUser,

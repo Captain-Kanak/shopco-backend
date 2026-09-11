@@ -86,13 +86,6 @@ export const auth = betterAuth({
                 name: user.name,
                 otp,
               },
-              attachments: [
-                {
-                  filename: "logo.png",
-                  content: "logo",
-                  contentType: "image/png",
-                },
-              ],
             });
           }
         } else if (type === "forget-password") {
@@ -109,13 +102,6 @@ export const auth = betterAuth({
                 name: user.name,
                 otp,
               },
-              attachments: [
-                {
-                  filename: "logo.png",
-                  content: "logo",
-                  contentType: "image/png",
-                },
-              ],
             });
           }
         }
