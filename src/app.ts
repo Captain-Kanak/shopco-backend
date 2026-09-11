@@ -1,10 +1,13 @@
-import express, { Application, Request, Response } from "express";
+import express, { Application, json, Request, Response } from "express";
 import status from "http-status";
 import { sendResponse } from "./utils/send-response.js";
 import { indexRouter } from "./routes/index.js";
 import errorMiddleware from "./middlewares/error-middleware.js";
 
 const app: Application = express();
+
+// json middleware
+app.use(json());
 
 app.get("/", (req: Request, res: Response) => {
   return sendResponse(res, {
@@ -17,10 +20,9 @@ app.get("/", (req: Request, res: Response) => {
 app.use("/api/v1", indexRouter);
 
 app.use((req: Request, res: Response) => {
-  return sendResponse(res, {
-    statusCode: status.NOT_FOUND,
+  return res.status(status.NOT_FOUND).json({
     success: false,
-    message: "Route not found",
+    message: "Not Found",
     route: req.originalUrl,
   });
 });

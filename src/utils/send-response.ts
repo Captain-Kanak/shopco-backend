@@ -5,8 +5,7 @@ interface ResponseData<T = unknown> {
   success: boolean;
   message: string;
   data?: T;
-  error?: unknown;
-  [key: string]: unknown;
+  error?: any;
 }
 
 export const sendResponse = <T>(res: Response, resData: ResponseData<T>) => {

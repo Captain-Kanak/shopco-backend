@@ -5,6 +5,10 @@ model User {
     emailVerified Boolean @default(false)
     image         String?
 
+    phone       String?   @db.VarChar(15)
+    address     String?   @db.Text
+    dateOfBirth DateTime?
+
     role   UserRole   @default(CUSTOMER)
     status UserStatus @default(ACTIVE)
 

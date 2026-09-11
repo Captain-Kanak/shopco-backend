@@ -3,7 +3,7 @@ import { prisma } from "../../lib/prisma.js";
 import { Register } from "./auth.type.js";
 import AppError from "../../errors/app-error.js";
 import { auth } from "../../lib/auth.js";
-import { User } from "better-auth";
+import { User } from "@prisma/client";
 
 const register = async (payload: Register): Promise<User> => {
   try {
@@ -28,7 +28,18 @@ const register = async (payload: Register): Promise<User> => {
       },
     });
 
-    return result.user;
+    const newUser = await prisma.user.findUnique({
+      where: { id: result.user.id },
+    });
+
+    if (!newUser) {
+      throw new AppError(
+        "User registration failed",
+        status.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    return newUser;
   } catch (error) {
     throw error;
   }
