@@ -4,8 +4,8 @@ import { authService } from "./auth.service.js";
 import { sendResponse } from "../../utils/send-response.js";
 import status from "http-status";
 
-const register = catchAsync(async (req: Request, res: Response) => {
-  const result = await authService.register(req.body);
+const registerUser = catchAsync(async (req: Request, res: Response) => {
+  const result = await authService.registerUser(req.body);
 
   return sendResponse(res, {
     statusCode: status.CREATED,
@@ -16,5 +16,5 @@ const register = catchAsync(async (req: Request, res: Response) => {
 });
 
 export const authController = {
-  register,
+  registerUser,
 };

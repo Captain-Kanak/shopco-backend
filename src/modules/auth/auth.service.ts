@@ -5,7 +5,7 @@ import AppError from "../../errors/app-error.js";
 import { auth } from "../../lib/auth.js";
 import { User } from "@prisma/client";
 
-const register = async (payload: Register): Promise<User> => {
+const registerUser = async (payload: Register): Promise<User> => {
   const { name, email, password } = payload;
 
   try {
@@ -46,5 +46,5 @@ const register = async (payload: Register): Promise<User> => {
 };
 
 export const authService = {
-  register,
+  registerUser,
 };
