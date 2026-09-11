@@ -6,9 +6,9 @@ import { auth } from "../../lib/auth.js";
 import { User } from "@prisma/client";
 
 const register = async (payload: Register): Promise<User> => {
-  try {
-    const { name, email, password } = payload;
+  const { name, email, password } = payload;
 
+  try {
     const user = await prisma.user.findUnique({
       where: { email },
     });

@@ -22,8 +22,7 @@ async function errorMiddleware(
     message = err.message;
   }
 
-  return sendResponse(res, {
-    statusCode,
+  return res.status(statusCode).json({
     success: false,
     message,
     ...(env.NODE_ENV === "development" && { stack: err.stack }),

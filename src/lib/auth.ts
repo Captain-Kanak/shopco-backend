@@ -55,6 +55,10 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
+    onExistingUserSignUp: async ({ user }) => {
+      // e.g. send "someone tried to sign up with your email" notice
+      console.log(`Duplicate signup attempt for ${user.email}`);
+    },
   },
   emailVerification: {
     sendOnSignUp: true,
