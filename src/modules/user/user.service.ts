@@ -3,6 +3,7 @@ import AppError from "../../errors/app-error.js";
 import { prisma } from "../../lib/prisma.js";
 import { UpdateUser } from "./user.interface.js";
 import { User } from "@prisma/client";
+import { deleteFromCloudinaryByUrl } from "../../config/cloudinary.js";
 
 const updateProfile = async (
   userId: string,
@@ -15,6 +16,10 @@ const updateProfile = async (
 
     if (!user) {
       throw new AppError("User not found", status.NOT_FOUND);
+    }
+
+    if (payload.image && user.image) {
+      await deleteFromCloudinaryByUrl(user.image);
     }
 
     const updatedUser = await prisma.user.update({

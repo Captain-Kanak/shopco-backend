@@ -8,7 +8,15 @@ import status from "http-status";
 const updateProfile = catchAsync(async (req: Request, res: Response) => {
   const user = req.user as User;
 
-  const result = await userService.updateProfile(user.id, req.body);
+  const payload = {
+    ...req.body,
+    ...(req.body.dateOfBirth && {
+      dateOfBirth: new Date(req.body.dateOfBirth),
+    }),
+    ...(req.file && { image: req.file.path }),
+  };
+
+  const result = await userService.updateProfile(user.id, payload);
 
   sendResponse(res, {
     statusCode: status.OK,
