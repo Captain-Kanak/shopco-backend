@@ -4,6 +4,7 @@ import { authMiddleware } from "../../middlewares/auth-middleware.js";
 import { validateRequestBody } from "../../middlewares/zod-middleware.js";
 import { userValidation } from "./user.validation.js";
 import { multerUpload } from "../../config/multer.js";
+import { UserRole } from "@prisma/client";
 
 const router = Router();
 
@@ -14,5 +15,7 @@ router.patch(
   validateRequestBody(userValidation.updateProfile),
   userController.updateProfile,
 );
+
+router.get("/", authMiddleware(UserRole.ADMIN), userController.getUsers);
 
 export { router as userRouter };

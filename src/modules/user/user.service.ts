@@ -2,8 +2,14 @@ import status from "http-status";
 import AppError from "../../errors/app-error.js";
 import { prisma } from "../../lib/prisma.js";
 import { UpdateUser } from "./user.interface.js";
-import { User } from "@prisma/client";
+import { Prisma, User } from "@prisma/client";
 import { deleteFromCloudinaryByUrl } from "../../config/cloudinary.js";
+import { QueryBuilder } from "../../query-builder/query-builder.js";
+import {
+  QueryBuilderParams,
+  QueryBuilderResult,
+} from "../../query-builder/query-builder.interface.js";
+import { userConstant } from "./user.constant.js";
 
 const updateProfile = async (
   userId: string,
@@ -33,6 +39,35 @@ const updateProfile = async (
   }
 };
 
+const getUsers = async (
+  query: QueryBuilderParams,
+): Promise<QueryBuilderResult<User>> => {
+  const queryBuilder = new QueryBuilder<
+    User,
+    Prisma.UserWhereInput,
+    Prisma.UserInclude
+  >(prisma.user, query, {
+    searchableFields: userConstant.searchableFields,
+    filterableFields: userConstant.filterableFields,
+    selectableFields: userConstant.selectableFields,
+    includableFields: userConstant.includableFields,
+    sortableFields: userConstant.sortableFields,
+  });
+
+  const result = await queryBuilder
+    .pagination()
+    .sort()
+    .where({})
+    .search()
+    .filter()
+    .select()
+    .include({})
+    .execute();
+
+  return result;
+};
+
 export const userService = {
   updateProfile,
+  getUsers,
 };
