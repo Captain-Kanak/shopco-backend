@@ -36,20 +36,20 @@ export class QueryBuilder<T, TWhereInput, TInclude> {
       const fieldParts = this.sortBy.split(".").map((field) => field.trim());
 
       if (fieldParts.length === 2) {
-        const [field, nestedField] = fieldParts;
+        const [parentField, nestedField] = fieldParts;
 
         this.findManyArgs.orderBy = {
-          [field]: {
+          [parentField]: {
             [nestedField]: this.sortOrder,
           },
         };
 
         return this;
       } else if (fieldParts.length === 3) {
-        const [field, nestedField1, nestedField2] = fieldParts;
+        const [parentField, nestedField1, nestedField2] = fieldParts;
 
         this.findManyArgs.orderBy = {
-          [field]: {
+          [parentField]: {
             [nestedField1]: {
               [nestedField2]: this.sortOrder,
             },
@@ -84,7 +84,7 @@ export class QueryBuilder<T, TWhereInput, TInclude> {
   search(): this {
     const { searchableFields } = this.config;
 
-    if (this.searchTerm && searchableFields && searchableFields.length > 0) {
+    if (this.searchTerm && searchableFields.length > 0) {
       const searchString: PrismaSearchString = {
         contains: this.searchTerm,
         mode: "insensitive",
@@ -96,18 +96,18 @@ export class QueryBuilder<T, TWhereInput, TInclude> {
             const fieldParts = key.split(".").map((field) => field.trim());
 
             if (fieldParts.length === 2) {
-              const [field, nestedField] = fieldParts;
+              const [parentField, nestedField] = fieldParts;
 
               return {
-                [field]: {
+                [parentField]: {
                   [nestedField]: searchString,
                 },
               };
             } else if (fieldParts.length === 3) {
-              const [field, nestedField1, nestedField2] = fieldParts;
+              const [parentField, nestedField1, nestedField2] = fieldParts;
 
               return {
-                [field]: {
+                [parentField]: {
                   some: {
                     [nestedField1]: {
                       [nestedField2]: searchString,
@@ -164,7 +164,7 @@ export class QueryBuilder<T, TWhereInput, TInclude> {
         return;
       }
 
-      if (filterableFields && !filterableFields.includes(field)) {
+      if (!filterableFields.includes(field)) {
         return;
       }
 
@@ -173,6 +173,7 @@ export class QueryBuilder<T, TWhereInput, TInclude> {
           ...this.findManyArgs.where,
           [field]: this._parseRangeFilter(
             value as Record<string, string | number>,
+            field,
           ),
         };
 
@@ -180,6 +181,7 @@ export class QueryBuilder<T, TWhereInput, TInclude> {
           ...this.countArgs.where,
           [field]: this._parseRangeFilter(
             value as Record<string, string | number>,
+            field,
           ),
         };
 
@@ -187,39 +189,35 @@ export class QueryBuilder<T, TWhereInput, TInclude> {
       }
 
       if (field.includes(".")) {
-        const fieldParts = field.split(".").map((field) => field.trim());
+        const fieldParts = field.split(".").map((part) => part.trim());
 
         if (fieldParts.length === 2) {
-          const [field, nestedField] = fieldParts;
+          const [parentField, nestedField] = fieldParts;
 
           this.findManyArgs.where = {
             ...this.findManyArgs.where,
-            [field]: {
-              some: {
-                [nestedField]: this._parseFilterValue(value),
-              },
+            [parentField]: {
+              some: { [nestedField]: this._parseFilterValue(value, field) },
             },
           };
 
           this.countArgs.where = {
             ...this.countArgs.where,
-            [field]: {
-              some: {
-                [nestedField]: this._parseFilterValue(value),
-              },
+            [parentField]: {
+              some: { [nestedField]: this._parseFilterValue(value, field) },
             },
           };
 
           return;
         } else if (fieldParts.length === 3) {
-          const [field, nestedField1, nestedField2] = fieldParts;
+          const [parentField, nestedField1, nestedField2] = fieldParts;
 
           this.findManyArgs.where = {
             ...this.findManyArgs.where,
-            [field]: {
+            [parentField]: {
               some: {
                 [nestedField1]: {
-                  [nestedField2]: this._parseFilterValue(value),
+                  [nestedField2]: this._parseFilterValue(value, field),
                 },
               },
             },
@@ -227,10 +225,10 @@ export class QueryBuilder<T, TWhereInput, TInclude> {
 
           this.countArgs.where = {
             ...this.countArgs.where,
-            [field]: {
+            [parentField]: {
               some: {
                 [nestedField1]: {
-                  [nestedField2]: this._parseFilterValue(value),
+                  [nestedField2]: this._parseFilterValue(value, field),
                 },
               },
             },
@@ -242,12 +240,12 @@ export class QueryBuilder<T, TWhereInput, TInclude> {
 
       this.findManyArgs.where = {
         ...this.findManyArgs.where,
-        [field]: this._parseFilterValue(value),
+        [field]: this._parseFilterValue(value, field),
       };
 
       this.countArgs.where = {
         ...this.countArgs.where,
-        [field]: this._parseFilterValue(value),
+        [field]: this._parseFilterValue(value, field),
       };
     });
 
@@ -273,7 +271,6 @@ export class QueryBuilder<T, TWhereInput, TInclude> {
 
         if (fieldParts.length === 2) {
           const [parentField, nestedField] = fieldParts;
-
           this.findManyArgs.select = {
             ...this.findManyArgs.select,
             [parentField]: {
@@ -283,25 +280,18 @@ export class QueryBuilder<T, TWhereInput, TInclude> {
               },
             },
           };
-
           return;
         } else if (fieldParts.length === 3) {
           const [parentField, nestedField1, nestedField2] = fieldParts;
-
           this.findManyArgs.select = {
             ...this.findManyArgs.select,
             [parentField]: {
               select: {
                 ...(this.findManyArgs.select?.[parentField] as any)?.select,
-                [nestedField1]: {
-                  select: {
-                    [nestedField2]: true,
-                  },
-                },
+                [nestedField1]: { select: { [nestedField2]: true } },
               },
             },
           };
-
           return;
         }
       }
@@ -311,6 +301,13 @@ export class QueryBuilder<T, TWhereInput, TInclude> {
         [field]: true,
       };
     });
+
+    if (this.findManyArgs.select) {
+      this.findManyArgs.select = {
+        ...this.findManyArgs.select,
+        id: true,
+      };
+    }
 
     return this;
   }
@@ -431,14 +428,18 @@ export class QueryBuilder<T, TWhereInput, TInclude> {
 
   private _parseRangeFilter(
     value: Record<string, string | number>,
+    field?: string,
   ): PrismaNumberFilter | PrismaSearchString {
+    const isNumericField = field && this.config.numericFields?.includes(field);
     const rangeQuery: Record<string, unknown> = {};
 
     Object.keys(value).forEach((operator) => {
       const operatorValue = value[operator];
 
       const parsedValue: number | string =
-        typeof operatorValue === "string" && !isNaN(Number(operatorValue))
+        isNumericField &&
+        typeof operatorValue === "string" &&
+        !isNaN(Number(operatorValue))
           ? Number(operatorValue)
           : operatorValue;
 
