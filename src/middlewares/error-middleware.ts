@@ -7,6 +7,7 @@ import * as z from "zod";
 import { handleZodError } from "../errors/zod-error.js";
 import { Prisma } from "@prisma/client";
 import { handlePrismaError } from "../errors/prisma-error.js";
+import { deleteFromCloudinaryById } from "../config/cloudinary.js";
 
 async function errorMiddleware(
   err: Error,
@@ -14,6 +15,19 @@ async function errorMiddleware(
   res: Response,
   next: NextFunction,
 ) {
+  if (req.file) {
+    await deleteFromCloudinaryById(req.file.filename).catch(() => {});
+  }
+
+  if (req.files) {
+    const files = Array.isArray(req.files)
+      ? req.files
+      : Object.values(req.files).flat();
+    await Promise.all(
+      files.map((f) => deleteFromCloudinaryById(f.filename).catch(() => {})),
+    );
+  }
+
   let statusCode: number = status.INTERNAL_SERVER_ERROR;
   let message: string = "Internal Server Error";
   let errorSources: ErrorSource[] = [];
