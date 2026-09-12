@@ -18,4 +18,10 @@ router.patch(
 
 router.get("/", authMiddleware(UserRole.ADMIN), userController.getUsers);
 
+router.delete(
+  "/:id",
+  authMiddleware(UserRole.ADMIN),
+  userController.deleteUserById,
+);
+
 export { router as userRouter };

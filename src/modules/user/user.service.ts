@@ -61,13 +61,37 @@ const getUsers = async (
     .search()
     .filter()
     .select()
-    .include({})
+    .include({
+      _count: true,
+    })
     .execute();
 
   return result;
 };
 
+const deleteUserById = async (userId: string): Promise<User> => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId, deletedAt: null },
+    });
+
+    if (!user) {
+      throw new AppError("User not found", status.NOT_FOUND);
+    }
+
+    const deletedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { deletedAt: new Date() },
+    });
+
+    return deletedUser;
+  } catch (error) {
+    throw error;
+  }
+};
+
 export const userService = {
   updateProfile,
   getUsers,
+  deleteUserById,
 };

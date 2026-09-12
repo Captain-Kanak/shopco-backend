@@ -15,18 +15,12 @@ const selectableFields: string[] = [
   "status",
   "createdAt",
   "updatedAt",
+  "deletedAt",
 ];
 
 const includableFields: string[] = ["carts", "orders", "payments"];
 
-const sortableFields: string[] = [
-  "name",
-  "email",
-  "role",
-  "status",
-  "createdAt",
-  "updatedAt",
-];
+const sortableFields: string[] = ["name", "email", "createdAt", "updatedAt"];
 
 export const userConstant = {
   searchableFields,
