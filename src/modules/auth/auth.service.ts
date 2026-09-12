@@ -3,7 +3,7 @@ import { prisma } from "../../lib/prisma.js";
 import { LoginUser, RegisterUser, VerifyEmail } from "./auth.interface.js";
 import AppError from "../../errors/app-error.js";
 import { auth } from "../../lib/auth.js";
-import { User, UserRole } from "@prisma/client";
+import { User } from "@prisma/client";
 import { Session } from "better-auth";
 import { fromNodeHeaders } from "better-auth/node";
 
@@ -38,8 +38,6 @@ const verifyEmail = async (payload: VerifyEmail): Promise<void> => {
   const { email, otp } = payload;
 
   const result = await auth.api.verifyEmailOTP({ body: { email, otp } });
-
-  console.log("isEmailVerified", result.user.emailVerified);
 
   if (!result.status) {
     throw new AppError(

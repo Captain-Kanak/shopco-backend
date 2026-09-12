@@ -15,28 +15,24 @@ const updateProfile = async (
   userId: string,
   payload: UpdateUser,
 ): Promise<User> => {
-  try {
-    const user = await prisma.user.findUnique({
-      where: { id: userId, deletedAt: null },
-    });
+  const user = await prisma.user.findUnique({
+    where: { id: userId, deletedAt: null },
+  });
 
-    if (!user) {
-      throw new AppError("User not found", status.NOT_FOUND);
-    }
-
-    if (payload.image && user.image) {
-      await deleteFromCloudinaryByUrl(user.image);
-    }
-
-    const updatedUser = await prisma.user.update({
-      where: { id: userId },
-      data: payload,
-    });
-
-    return updatedUser;
-  } catch (error) {
-    throw error;
+  if (!user) {
+    throw new AppError("User not found", status.NOT_FOUND);
   }
+
+  if (payload.image && user.image) {
+    await deleteFromCloudinaryByUrl(user.image);
+  }
+
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: payload,
+  });
+
+  return updatedUser;
 };
 
 const getUsers = async (
@@ -70,63 +66,59 @@ const getUsers = async (
 };
 
 const getUserById = async (userId: string): Promise<User> => {
-  try {
-    const user = await prisma.user.findUnique({
-      where: { id: userId, deletedAt: null },
-    });
+  const user = await prisma.user.findUnique({
+    where: { id: userId, deletedAt: null },
+  });
 
-    if (!user) {
-      throw new AppError("User not found", status.NOT_FOUND);
-    }
-
-    return user;
-  } catch (error) {
-    throw error;
+  if (!user) {
+    throw new AppError("User not found", status.NOT_FOUND);
   }
+
+  return user;
 };
 
 const banUserById = async (userId: string): Promise<User> => {
-  try {
-    const user = await prisma.user.findUnique({
-      where: { id: userId, deletedAt: null },
-    });
+  const user = await prisma.user.findUnique({
+    where: { id: userId, deletedAt: null },
+  });
 
-    if (!user) {
-      throw new AppError("User not found", status.NOT_FOUND);
-    }
-
-    const bannedUser = await prisma.user.update({
-      where: { id: userId },
-      data: {
-        status: UserStatus.BANNED,
-      },
-    });
-
-    return bannedUser;
-  } catch (error) {
-    throw error;
+  if (!user) {
+    throw new AppError("User not found", status.NOT_FOUND);
   }
+
+  if (user.status === UserStatus.BANNED) {
+    throw new AppError("User is already banned", status.CONFLICT);
+  }
+
+  const [bannedUser] = await prisma.$transaction([
+    prisma.user.update({
+      where: { id: userId },
+      data: { status: UserStatus.BANNED },
+    }),
+    prisma.session.deleteMany({ where: { userId } }),
+  ]);
+
+  return bannedUser;
 };
 
 const deleteUserById = async (userId: string): Promise<User> => {
-  try {
-    const user = await prisma.user.findUnique({
-      where: { id: userId, deletedAt: null },
-    });
+  const user = await prisma.user.findUnique({
+    where: { id: userId, deletedAt: null },
+  });
 
-    if (!user) {
-      throw new AppError("User not found", status.NOT_FOUND);
-    }
+  if (!user) {
+    throw new AppError("User not found", status.NOT_FOUND);
+  }
 
-    const deletedUser = await prisma.user.update({
+  const [deletedUser] = await prisma.$transaction([
+    prisma.user.update({
       where: { id: userId },
       data: { deletedAt: new Date() },
-    });
+    }),
+    prisma.session.deleteMany({ where: { userId } }),
+  ]);
 
-    return deletedUser;
-  } catch (error) {
-    throw error;
-  }
+  return deletedUser;
 };
 
 export const userService = {

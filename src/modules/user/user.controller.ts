@@ -4,9 +4,12 @@ import { User } from "@prisma/client";
 import { userService } from "./user.service.js";
 import { sendResponse } from "../../utils/send-response.js";
 import status from "http-status";
+import AppError from "../../errors/app-error.js";
 
 const updateProfile = catchAsync(async (req: Request, res: Response) => {
-  const user = req.user as User;
+  if (!req.user) {
+    throw new AppError("Not authenticated", status.UNAUTHORIZED);
+  }
 
   const payload = {
     ...req.body,
@@ -16,7 +19,7 @@ const updateProfile = catchAsync(async (req: Request, res: Response) => {
     ...(req.file && { image: req.file.path }),
   };
 
-  const result = await userService.updateProfile(user.id, payload);
+  const result = await userService.updateProfile(req.user.id, payload);
 
   sendResponse(res, {
     statusCode: status.OK,
