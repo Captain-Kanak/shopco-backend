@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { v7 as uuidv7 } from "uuid";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "./prisma.js";
 import { UserRole, UserStatus } from "@prisma/client";
@@ -14,21 +15,12 @@ export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
   baseURL: env.BETTER_AUTH_URL,
   trustedOrigins: [env.FRONTEND_URL, env.BETTER_AUTH_URL],
-  session: {
-    expiresIn: Math.floor(
-      ms(env.BETTER_AUTH_SESSION_EXPIRES_IN as StringValue) / 1000,
-    ),
-    updateAge: Math.floor(
-      ms(env.BETTER_AUTH_SESSION_UPDATE_AGE as StringValue) / 1000,
-    ),
-    cookieCache: {
-      enabled: true,
-      maxAge: Math.floor(
-        ms(env.BETTER_AUTH_SESSION_EXPIRES_IN as StringValue) / 1000,
-      ),
-    },
-  },
   advanced: {
+    database: {
+      generateId: (options) => {
+        return uuidv7();
+      },
+    },
     disableCSRFCheck: env.NODE_ENV === "development",
     cookiePrefix: "better-auth",
     useSecureCookies: env.NODE_ENV === "production",
@@ -52,6 +44,20 @@ export const auth = betterAuth({
           path: "/",
         },
       },
+    },
+  },
+  session: {
+    expiresIn: Math.floor(
+      ms(env.BETTER_AUTH_SESSION_EXPIRES_IN as StringValue) / 1000,
+    ),
+    updateAge: Math.floor(
+      ms(env.BETTER_AUTH_SESSION_UPDATE_AGE as StringValue) / 1000,
+    ),
+    cookieCache: {
+      enabled: true,
+      maxAge: Math.floor(
+        ms(env.BETTER_AUTH_SESSION_EXPIRES_IN as StringValue) / 1000,
+      ),
     },
   },
   emailAndPassword: {
