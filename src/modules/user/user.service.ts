@@ -2,7 +2,7 @@ import status from "http-status";
 import AppError from "../../errors/app-error.js";
 import { prisma } from "../../lib/prisma.js";
 import { UpdateUser } from "./user.interface.js";
-import { Prisma, User } from "@prisma/client";
+import { Prisma, User, UserStatus } from "@prisma/client";
 import { deleteFromCloudinaryByUrl } from "../../config/cloudinary.js";
 import { QueryBuilder } from "../../query-builder/query-builder.js";
 import {
@@ -69,6 +69,29 @@ const getUsers = async (
   return result;
 };
 
+const banUserById = async (userId: string): Promise<User> => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId, deletedAt: null },
+    });
+
+    if (!user) {
+      throw new AppError("User not found", status.NOT_FOUND);
+    }
+
+    const bannedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        status: UserStatus.BANNED,
+      },
+    });
+
+    return bannedUser;
+  } catch (error) {
+    throw error;
+  }
+};
+
 const deleteUserById = async (userId: string): Promise<User> => {
   try {
     const user = await prisma.user.findUnique({
@@ -93,5 +116,6 @@ const deleteUserById = async (userId: string): Promise<User> => {
 export const userService = {
   updateProfile,
   getUsers,
+  banUserById,
   deleteUserById,
 };

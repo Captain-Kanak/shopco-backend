@@ -18,6 +18,12 @@ router.patch(
 
 router.get("/", authMiddleware(UserRole.ADMIN), userController.getUsers);
 
+router.patch(
+  "/ban/:id",
+  authMiddleware(UserRole.ADMIN),
+  userController.banUserById,
+);
+
 router.delete(
   "/:id",
   authMiddleware(UserRole.ADMIN),

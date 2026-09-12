@@ -16,6 +16,7 @@
 | ------ | ---------------------------- | ------ | ------------------------------- |
 | PATCH  | /api/v1/users/update-profile | SECURE | user can update own information |
 | GET    | /api/v1/users                | ADMIN  | get all users                   |
+| PATCH  | /api/v1/users/ban/:id        | ADMIN  | ban user by id (soft delete)    |
 | DELETE | /api/v1/users/:id            | ADMIN  | delete user by id (soft delete) |
 
 ### Brand
