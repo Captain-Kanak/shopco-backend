@@ -64,8 +64,16 @@ export const auth = betterAuth({
     enabled: true,
     requireEmailVerification: true,
     onExistingUserSignUp: async ({ user }) => {
-      // e.g. send "someone tried to sign up with your email" notice
-      console.log(`Duplicate signup attempt for ${user.email}`);
+      try {
+        await sendEmail({
+          to: user.email,
+          subject: "Signup attempt on your ShopCo account",
+          templateName: "duplicateSignupNotice",
+          templateData: { name: user.name },
+        });
+      } catch (error) {
+        console.error("Failed to send duplicate-signup notice email:", error);
+      }
     },
   },
   emailVerification: {
@@ -79,35 +87,29 @@ export const auth = betterAuth({
       overrideDefaultEmailVerification: true,
       async sendVerificationOTP({ email, otp, type }) {
         if (type === "email-verification") {
-          const user = await prisma.user.findUnique({
-            where: { email },
-          });
+          const user = await prisma.user.findUnique({ where: { email } });
 
           if (user && !user.emailVerified) {
             sendEmail({
               to: email,
               subject: "Verify your email address",
               templateName: "otp",
-              templateData: {
-                name: user.name,
-                otp,
-              },
+              templateData: { name: user.name, otp },
+            }).catch((error) => {
+              console.error("Failed to send verification OTP email:", error);
             });
           }
         } else if (type === "forget-password") {
-          const user = await prisma.user.findUnique({
-            where: { email },
-          });
+          const user = await prisma.user.findUnique({ where: { email } });
 
           if (user) {
             sendEmail({
               to: email,
               subject: "Reset your password",
               templateName: "otp",
-              templateData: {
-                name: user.name,
-                otp,
-              },
+              templateData: { name: user.name, otp },
+            }).catch((error) => {
+              console.error("Failed to send password reset OTP email:", error);
             });
           }
         }
@@ -128,11 +130,13 @@ export const auth = betterAuth({
         type: "string",
         required: true,
         defaultValue: UserRole.CUSTOMER,
+        input: false,
       },
       status: {
         type: "string",
         required: true,
         defaultValue: UserStatus.ACTIVE,
+        input: false,
       },
       phone: {
         type: "string",
@@ -149,6 +153,7 @@ export const auth = betterAuth({
       deletedAt: {
         type: "date",
         required: false,
+        input: false,
       },
     },
   },

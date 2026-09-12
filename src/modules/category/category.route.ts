@@ -13,6 +13,8 @@ router.post(
 
 router.get("/", categoryController.getCategories);
 
+// router.get("/tree", categoryController.getCategoryTree);
+
 router.get("/:id", categoryController.getCategoryById);
 
 router.patch(

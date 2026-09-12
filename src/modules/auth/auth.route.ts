@@ -18,17 +18,20 @@ router.post(
   authController.verifyEmail,
 );
 
+// TODO : add access token and refresh token to cookie
 router.post(
   "/login",
   validateRequestBody(authValidation.loginUser),
   authController.loginUser,
 );
 
-// http://localhost:5000/api/v1/auth/login/google
-router.get("/login/google", authController.googleLogin);
+// http://localhost:5000/api/v1/auth/google
+router.get("/google", authController.googleLogin);
 
-router.get("/google/success", authController.googleLoginSuccess);
+router.get("/google/callback", authController.googleLoginSuccess);
 
-router.get("/get-me", authMiddleware(), authController.getMe);
+router.get("/me", authMiddleware(), authController.getMe);
+
+router.post("/logout", authMiddleware(), authController.logoutUser);
 
 export { router as authRouter };

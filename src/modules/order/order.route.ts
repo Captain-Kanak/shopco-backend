@@ -5,21 +5,23 @@ import { UserRole } from "@prisma/client";
 
 const router = Router();
 
-router.post("/", authMiddleware(UserRole.CUSTOMER), orderController.addOrder);
+router.post("/", authMiddleware(), orderController.addOrder);
 
 router.get("/", authMiddleware(), orderController.getOrders);
 
 router.get("/:id", authMiddleware(), orderController.getOrderById);
 
-router.patch(
-  "/:id",
-  authMiddleware(UserRole.CUSTOMER),
-  orderController.updateOrderById,
-);
+// router.patch("/:id/cancel", authMiddleware(), orderController.cancelOrder);
+
+// router.patch(
+//   "/:id/status",
+//   authMiddleware(UserRole.ADMIN),
+//   orderController.updateOrderStatus,
+// );
 
 router.delete(
   "/:id",
-  authMiddleware(UserRole.CUSTOMER),
+  authMiddleware(UserRole.ADMIN),
   orderController.deleteOrderById,
 );
 

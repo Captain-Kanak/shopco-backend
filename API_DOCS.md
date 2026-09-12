@@ -97,25 +97,25 @@ List responses include pagination metadata:
 
 > Managed by Better Auth. Registration/login issue a session token; all subsequent SECURE/ADMIN requests must include it.
 
-| Method | Endpoint             | Access | Description                                              |
-| ------ | -------------------- | ------ | -------------------------------------------------------- |
-| `POST` | `/auth/register`     | PUBLIC | Register a new account.                                  |
-| `POST` | `/auth/verify-email` | PUBLIC | Verify a user's email via the token sent to their inbox. |
-| `POST` | `/auth/login`        | PUBLIC | Log in with email/password.                              |
-| `GET`  | `/auth/login/google` | PUBLIC | Initiate Google OAuth login.                             |
-| `GET`  | `/auth/get-me`       | SECURE | Get the currently authenticated user's data.             |
+| Method | Endpoint             | Access | Description                                            |
+| ------ | -------------------- | ------ | ------------------------------------------------------ |
+| `POST` | `/auth/register`     | PUBLIC | Register a new account.                                |
+| `POST` | `/auth/verify-email` | PUBLIC | Verify a user's email via the otp sent to their inbox. |
+| `POST` | `/auth/login`        | PUBLIC | Log in with email/password.                            |
+| `GET`  | `/auth/login/google` | PUBLIC | Initiate Google OAuth login.                           |
+| `GET`  | `/auth/me`           | SECURE | Get the currently authenticated user's data.           |
 
 ---
 
 ## User
 
-| Method   | Endpoint                | Access | Description                                                                                                          |
-| -------- | ----------------------- | ------ | -------------------------------------------------------------------------------------------------------------------- |
-| `PATCH`  | `/users/update-profile` | SECURE | Update the caller's own profile (`name`, `phone`, `address`, `dateOfBirth`, `image`). Accepts `multipart/form-data`. |
-| `GET`    | `/users`                | ADMIN  | List all users. Supports [common query parameters](#common-query-parameters-list-endpoints).                         |
-| `GET`    | `/users/:id`            | ADMIN  | Get a single user by ID.                                                                                             |
-| `PATCH`  | `/users/ban/:id`        | ADMIN  | Ban a user (`status → BANNED`).                                                                                      |
-| `DELETE` | `/users/:id`            | ADMIN  | Soft-delete a user (`deletedAt` set).                                                                                |
+| Method   | Endpoint         | Access | Description                                                                                                          |
+| -------- | ---------------- | ------ | -------------------------------------------------------------------------------------------------------------------- |
+| `PATCH`  | `/users/me`      | SECURE | Update the caller's own profile (`name`, `phone`, `address`, `dateOfBirth`, `image`). Accepts `multipart/form-data`. |
+| `GET`    | `/users`         | ADMIN  | List all users. Supports [common query parameters](#common-query-parameters-list-endpoints).                         |
+| `GET`    | `/users/:id`     | ADMIN  | Get a single user by ID.                                                                                             |
+| `PATCH`  | `/users/:id/ban` | ADMIN  | Ban a user (`status → BANNED`).                                                                                      |
+| `DELETE` | `/users/:id`     | ADMIN  | Soft-delete a user (`deletedAt` set).                                                                                |
 
 **Filterable fields:** `role`, `status`, `emailVerified`
 **Searchable fields:** `name`, `email`, `phone`
@@ -170,6 +170,7 @@ List responses include pagination metadata:
 | -------- | ------------ | ------ | ------------------------------------------ |
 | `POST`   | `/carts`     | SECURE | Add an item to the caller's own cart.      |
 | `GET`    | `/carts`     | SECURE | Get the **caller's own** cart items.       |
+| `PATCH`  | `/carts/:id` | SECURE | Update cart items quantity.                |
 | `DELETE` | `/carts/:id` | SECURE | Remove an item from the caller's own cart. |
 
 > ⚠️ "Get all carts" here means the authenticated user's own cart, not every user's cart — see [Notes](#notes--open-questions) for the access-scoping this implies.
@@ -192,13 +193,13 @@ List responses include pagination metadata:
 
 ## Payment
 
-| Method   | Endpoint                          | Access   | Description                                                                                                                                                                                         |
-| -------- | --------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `POST`   | `/payments/create-payment-intent` | SECURE   | Create a Stripe payment intent for an order.                                                                                                                                                        |
-| `GET`    | `/payments`                       | SECURE   | Get the **caller's own** payments (or all, for ADMIN).                                                                                                                                              |
-| `GET`    | `/payments/:id`                   | SECURE   | Get a single payment by ID (owner or ADMIN only).                                                                                                                                                   |
-| `DELETE` | `/payments/:id`                   | SECURE\* | Delete a payment record.                                                                                                                                                                            |
-| `POST`   | `/payments/webhook`               | WEBHOOK  | Stripe webhook — confirms payment success/failure and updates `Payment.status` / `Order.paymentStatus` server-to-server. Not user-facing; verified via Stripe's signing secret, not a user session. |
+| Method   | Endpoint            | Access   | Description                                                                                                                                                                                         |
+| -------- | ------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST`   | `/payments/intent`  | SECURE   | Create a Stripe payment intent for an order.                                                                                                                                                        |
+| `GET`    | `/payments`         | SECURE   | Get the **caller's own** payments (or all, for ADMIN).                                                                                                                                              |
+| `GET`    | `/payments/:id`     | SECURE   | Get a single payment by ID (owner or ADMIN only).                                                                                                                                                   |
+| `DELETE` | `/payments/:id`     | SECURE\* | Delete a payment record.                                                                                                                                                                            |
+| `POST`   | `/payments/webhook` | WEBHOOK  | Stripe webhook — confirms payment success/failure and updates `Payment.status` / `Order.paymentStatus` server-to-server. Not user-facing; verified via Stripe's signing secret, not a user session. |
 
 **\*See [Notes](#notes--open-questions)** — allowing any authenticated user to `DELETE` a payment record is almost certainly unintended.
 

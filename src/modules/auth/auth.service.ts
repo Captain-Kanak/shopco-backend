@@ -3,133 +3,103 @@ import { prisma } from "../../lib/prisma.js";
 import { LoginUser, RegisterUser, VerifyEmail } from "./auth.interface.js";
 import AppError from "../../errors/app-error.js";
 import { auth } from "../../lib/auth.js";
-import { User } from "@prisma/client";
+import { User, UserRole } from "@prisma/client";
 import { Session } from "better-auth";
+import { fromNodeHeaders } from "better-auth/node";
 
 const registerUser = async (payload: RegisterUser): Promise<User> => {
   const { name, email, password } = payload;
 
-  try {
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
+  const user = await prisma.user.findUnique({ where: { email } });
 
-    if (user) {
-      throw new AppError(
-        "User already exists with this email",
-        status.CONFLICT,
-      );
-    }
-
-    const result = await auth.api.signUpEmail({
-      body: {
-        name,
-        email,
-        password,
-      },
-    });
-
-    const newUser = await prisma.user.findUnique({
-      where: { id: result.user.id },
-    });
-
-    if (!newUser) {
-      throw new AppError(
-        "User registration failed",
-        status.INTERNAL_SERVER_ERROR,
-      );
-    }
-
-    return newUser;
-  } catch (error) {
-    throw error;
+  if (user) {
+    throw new AppError("User already exists with this email", status.CONFLICT);
   }
+
+  const result = await auth.api.signUpEmail({
+    body: { name, email, password },
+  });
+
+  const newUser = await prisma.user.findUnique({
+    where: { id: result.user.id },
+  });
+
+  if (!newUser) {
+    throw new AppError(
+      "User registration failed",
+      status.INTERNAL_SERVER_ERROR,
+    );
+  }
+
+  return newUser;
 };
 
 const verifyEmail = async (payload: VerifyEmail): Promise<void> => {
-  try {
-    const { email, otp } = payload;
+  const { email, otp } = payload;
 
-    const result = await auth.api.verifyEmailOTP({
-      body: {
-        email,
-        otp,
-      },
-    });
+  const result = await auth.api.verifyEmailOTP({ body: { email, otp } });
 
-    if (result.status && !result.user.emailVerified) {
-      await prisma.user.update({
-        where: {
-          email,
-        },
-        data: {
-          emailVerified: true,
-        },
-      });
-    }
-  } catch (error) {
-    throw error;
+  console.log("isEmailVerified", result.user.emailVerified);
+
+  if (!result.status) {
+    throw new AppError(
+      "Invalid or expired verification code",
+      status.BAD_REQUEST,
+    );
   }
 };
 
 const loginUser = async (
   payload: LoginUser,
 ): Promise<{ token: string; user: User }> => {
+  const { email, password } = payload;
+
+  let result;
+
   try {
-    const { email, password } = payload;
-
-    const user = await prisma.user.findUnique({
-      where: {
-        email,
-        deletedAt: null,
-      },
-    });
-
-    if (!user) {
-      throw new AppError("User not exist with this email", status.NOT_FOUND);
-    }
-
-    if (!user.emailVerified) {
-      throw new AppError("Email not verified", status.UNAUTHORIZED);
-    }
-
-    const result = await auth.api.signInEmail({
-      body: {
-        email,
-        password,
-      },
-    });
-
-    return {
-      token: result.token,
-      user,
-    };
-  } catch (error) {
-    throw error;
+    result = await auth.api.signInEmail({ body: { email, password } });
+  } catch {
+    throw new AppError("Invalid email or password", status.UNAUTHORIZED);
   }
+
+  const user = await prisma.user.findUnique({
+    where: { id: result.user.id, deletedAt: null },
+  });
+
+  if (!user) {
+    throw new AppError("Invalid email or password", status.UNAUTHORIZED);
+  }
+
+  if (!user.emailVerified) {
+    throw new AppError(
+      "Please verify your email before logging in",
+      status.UNAUTHORIZED,
+    );
+  }
+
+  return { token: result.token, user };
 };
 
 const googleLoginSuccess = async (
-  sessionToken: string,
+  requestHeaders: Record<string, string | string[] | undefined>,
 ): Promise<{ session: Session | null; user: User | null }> => {
-  try {
-    const session = await auth.api.getSession({
-      headers: {
-        Cookie: `better-auth.session_token=${sessionToken}`,
-      },
-    });
+  const session = await auth.api.getSession({
+    headers: fromNodeHeaders(requestHeaders),
+  });
 
-    if (!session?.session || !session?.user) {
-      return { session: null, user: null };
-    }
-
-    return {
-      session: session.session,
-      user: session.user as User,
-    };
-  } catch (error) {
-    throw error;
+  if (!session?.session || !session?.user) {
+    return { session: null, user: null };
   }
+
+  return { session: session.session, user: session.user as User };
+};
+
+const logoutUser = async (
+  requestHeaders: Record<string, string | string[] | undefined>,
+): Promise<void> => {
+  await auth.api.signOut({
+    headers: fromNodeHeaders(requestHeaders),
+  });
 };
 
 export const authService = {
@@ -137,4 +107,5 @@ export const authService = {
   verifyEmail,
   loginUser,
   googleLoginSuccess,
+  logoutUser,
 };

@@ -13,6 +13,16 @@ const setBetterAuthSessionCookie = (res: Response, token: string) => {
   });
 };
 
+const clearBetterAuthSessionCookie = (res: Response) => {
+  cookieUtils.clearCookie(res, "better-auth.session_token", {
+    secure: true,
+    sameSite: "none",
+    httpOnly: true,
+    path: "/",
+  });
+};
+
 export const tokenUtils = {
   setBetterAuthSessionCookie,
+  clearBetterAuthSessionCookie,
 };

@@ -6,7 +6,7 @@
 
 **Database:** PostgreSQL
 
-**[ERD LINK]()**
+<!-- [ERD LINK]() -->
 
 ---
 

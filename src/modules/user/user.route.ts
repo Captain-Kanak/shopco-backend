@@ -9,19 +9,23 @@ import { UserRole } from "@prisma/client";
 const router = Router();
 
 router.patch(
-  "/update-profile",
+  "/me",
   authMiddleware(),
   multerUpload.single("file"),
   validateRequestBody(userValidation.updateProfile),
   userController.updateProfile,
 );
 
+// router.post("/forgot-password", validateRequestBody(...), userController.forgotPassword);
+
+// router.post("/reset-password", validateRequestBody(...), userController.resetPassword);
+
 router.get("/", authMiddleware(UserRole.ADMIN), userController.getUsers);
 
 router.get("/:id", authMiddleware(UserRole.ADMIN), userController.getUserById);
 
 router.patch(
-  "/ban/:id",
+  "/:id/ban",
   authMiddleware(UserRole.ADMIN),
   userController.banUserById,
 );
