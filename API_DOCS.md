@@ -52,7 +52,8 @@
 
 ### Cart
 
-| Method | Endpoint      | Access | Description   |
-| ------ | ------------- | ------ | ------------- |
-| POST   | /api/v1/carts | SECURE | add to cart   |
-| GET    | /api/v1/carts | SECURE | get all carts |
+| Method | Endpoint          | Access | Description       |
+| ------ | ----------------- | ------ | ----------------- |
+| POST   | /api/v1/carts     | SECURE | add to cart       |
+| GET    | /api/v1/carts     | SECURE | get all carts     |
+| DELETE | /api/v1/carts/:id | SECURE | delete from carts |
