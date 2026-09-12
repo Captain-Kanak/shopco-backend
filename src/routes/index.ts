@@ -5,6 +5,7 @@ import { brandRouter } from "../modules/brand/brand.route.js";
 import { categoryRouter } from "../modules/category/category.route.js";
 import { productRouter } from "../modules/product/product.route.js";
 import { cartRouter } from "../modules/cart/cart.route.js";
+import { orderRouter } from "../modules/order/order.route.js";
 
 const router: Router = Router();
 
@@ -19,5 +20,7 @@ router.use("/categories", categoryRouter);
 router.use("/products", productRouter);
 
 router.use("/carts", cartRouter);
+
+router.use("/orders", orderRouter);
 
 export { router as indexRouter };

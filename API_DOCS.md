@@ -57,3 +57,11 @@
 | POST   | /api/v1/carts     | SECURE | add to cart       |
 | GET    | /api/v1/carts     | SECURE | get all carts     |
 | DELETE | /api/v1/carts/:id | SECURE | delete from carts |
+
+### Order
+
+| Method | Endpoint           | Access | Description        |
+| ------ | ------------------ | ------ | ------------------ |
+| POST   | /api/v1/orders     | SECURE | create new order   |
+| GET    | /api/v1/orders     | SECURE | get all orders     |
+| DELETE | /api/v1/orders/:id | SECURE | delete from orders |
