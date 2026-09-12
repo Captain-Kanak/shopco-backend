@@ -69,6 +69,22 @@ const getUsers = async (
   return result;
 };
 
+const getUserById = async (userId: string): Promise<User> => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId, deletedAt: null },
+    });
+
+    if (!user) {
+      throw new AppError("User not found", status.NOT_FOUND);
+    }
+
+    return user;
+  } catch (error) {
+    throw error;
+  }
+};
+
 const banUserById = async (userId: string): Promise<User> => {
   try {
     const user = await prisma.user.findUnique({
@@ -116,6 +132,7 @@ const deleteUserById = async (userId: string): Promise<User> => {
 export const userService = {
   updateProfile,
   getUsers,
+  getUserById,
   banUserById,
   deleteUserById,
 };

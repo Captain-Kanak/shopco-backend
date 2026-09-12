@@ -37,6 +37,19 @@ const getUsers = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getUserById = catchAsync(async (req: Request, res: Response) => {
+  const id = req.params.id as string;
+
+  const result = await userService.getUserById(id);
+
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "User fetched successfully",
+    data: result,
+  });
+});
+
 const banUserById = catchAsync(async (req: Request, res: Response) => {
   const id = req.params.id as string;
 
@@ -66,6 +79,7 @@ const deleteUserById = catchAsync(async (req: Request, res: Response) => {
 export const userController = {
   updateProfile,
   getUsers,
+  getUserById,
   banUserById,
   deleteUserById,
 };
