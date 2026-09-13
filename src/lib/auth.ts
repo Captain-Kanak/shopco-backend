@@ -25,7 +25,7 @@ export const auth = betterAuth({
     cookiePrefix: "better-auth",
     useSecureCookies: env.NODE_ENV === "production",
     crossSubDomainCookies: {
-      enabled: env.NODE_ENV === "production",
+      enabled: false,
     },
     cookies: {
       state: {
@@ -55,9 +55,7 @@ export const auth = betterAuth({
     ),
     cookieCache: {
       enabled: true,
-      maxAge: Math.floor(
-        ms(env.BETTER_AUTH_SESSION_EXPIRES_IN as StringValue) / 1000,
-      ),
+      maxAge: 5 * 60,
     },
   },
   emailAndPassword: {

@@ -28,13 +28,11 @@ async function errorMiddleware(
     );
   }
 
+  console.error(err);
+
   let statusCode: number = status.INTERNAL_SERVER_ERROR;
   let message: string = "Internal Server Error";
   let errorSources: ErrorSource[] = [];
-
-  if (env.NODE_ENV === "development") {
-    console.error(err);
-  }
 
   if (err instanceof z.ZodError) {
     const simplifiedZodErrors = handleZodError(err);

@@ -36,7 +36,7 @@ export const handlePrismaError = (
     case "P2003":
       return {
         statusCode: status.BAD_REQUEST,
-        message: "Related record not found",
+        message: "Invalid reference: related record not found or still in use",
         errorSources: [],
       };
 

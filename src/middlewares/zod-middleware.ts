@@ -9,7 +9,9 @@ export const validateRequestBody = (zodObject: z.ZodObject) => {
       try {
         req.body = JSON.parse(req.body.data);
       } catch {
-        throw new AppError("Invalid JSON in 'data' field", status.BAD_REQUEST);
+        return next(
+          new AppError("Invalid JSON in 'data' field", status.BAD_REQUEST),
+        );
       }
     }
 
