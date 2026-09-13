@@ -7,11 +7,10 @@ model Brand {
 
     products Product[]
 
-    createdAt DateTime  @default(now())
-    updatedAt DateTime  @updatedAt
-    deletedAt DateTime?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
     @@unique([slug])
-    @@index([deletedAt])
+    @@index([name])
     @@map("brand")
 }
