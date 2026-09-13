@@ -29,6 +29,26 @@ const updateProfile = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const forgetPassword = catchAsync(async (req: Request, res: Response) => {
+  await userService.forgetPassword(req.body);
+
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Password reset code has been sent",
+  });
+});
+
+const resetPassword = catchAsync(async (req: Request, res: Response) => {
+  await userService.resetPassword(req.body);
+
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Password reset successfully",
+  });
+});
+
 const getUsers = catchAsync(async (req: Request, res: Response) => {
   const result = await userService.getUsers(req.query);
 
@@ -81,6 +101,8 @@ const deleteUserById = catchAsync(async (req: Request, res: Response) => {
 
 export const userController = {
   updateProfile,
+  forgetPassword,
+  resetPassword,
   getUsers,
   getUserById,
   banUserById,

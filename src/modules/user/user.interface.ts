@@ -5,3 +5,13 @@ export interface UpdateUser {
   address?: string;
   dateOfBirth?: Date;
 }
+
+export interface ForgetPassword {
+  email: string;
+}
+
+export interface ResetPassword {
+  email: string;
+  otp: string;
+  password: string;
+}

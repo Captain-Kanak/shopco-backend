@@ -1,7 +1,7 @@
 import status from "http-status";
 import AppError from "../../errors/app-error.js";
 import { prisma } from "../../lib/prisma.js";
-import { UpdateUser } from "./user.interface.js";
+import { ForgetPassword, ResetPassword, UpdateUser } from "./user.interface.js";
 import { Prisma, User, UserStatus } from "@prisma/client";
 import { deleteFromCloudinaryByUrl } from "../../config/cloudinary.js";
 import { QueryBuilder } from "../../query-builder/query-builder.js";
@@ -10,6 +10,7 @@ import {
   QueryBuilderResult,
 } from "../../query-builder/query-builder.interface.js";
 import { userConstant } from "./user.constant.js";
+import { auth } from "../../lib/auth.js";
 
 const updateProfile = async (
   userId: string,
@@ -33,6 +34,29 @@ const updateProfile = async (
   });
 
   return updatedUser;
+};
+
+const forgetPassword = async (payload: ForgetPassword): Promise<void> => {
+  try {
+    await auth.api.forgetPasswordEmailOTP({ body: { email: payload.email } });
+  } catch (error) {
+    console.error("forgetPasswordEmailOTP failed:", error);
+  }
+};
+
+const resetPassword = async (payload: ResetPassword): Promise<void> => {
+  const { email, otp, password } = payload;
+
+  try {
+    await auth.api.resetPasswordEmailOTP({ body: { email, otp, password } });
+  } catch {
+    throw new AppError("Invalid or expired reset code", status.BAD_REQUEST);
+  }
+
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (user) {
+    await prisma.session.deleteMany({ where: { userId: user.id } });
+  }
 };
 
 const getUsers = async (
@@ -123,6 +147,8 @@ const deleteUserById = async (userId: string): Promise<User> => {
 
 export const userService = {
   updateProfile,
+  forgetPassword,
+  resetPassword,
   getUsers,
   getUserById,
   banUserById,

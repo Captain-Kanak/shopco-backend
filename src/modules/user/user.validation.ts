@@ -22,6 +22,28 @@ const dateOfBirthSchema = z.iso
     message: "Date of birth cannot be in the future",
   });
 
+const emailSchema = z
+  .email("Invalid email address")
+  .min(1, "Email is required")
+  .max(255, "Email can't be more than 255 characters long");
+
+const passwordSchema = z
+  .string({
+    error: (issue) =>
+      issue.input === undefined
+        ? "Password is required"
+        : "Password must be a string",
+  })
+  .min(8, "Password must be at least 8 characters long")
+  .max(50, "Password can't be more than 50 characters long");
+
+const otpSchema = z
+  .string({
+    error: (issue) =>
+      issue.input === undefined ? "OTP is required" : "OTP must be a string",
+  })
+  .length(6, "OTP must be exactly 6 characters long");
+
 const updateProfile = z
   .object({
     name: nameSchema,
@@ -32,6 +54,22 @@ const updateProfile = z
   .partial()
   .strict();
 
+const forgetPassword = z
+  .object({
+    email: emailSchema,
+  })
+  .strict();
+
+const resetPassword = z
+  .object({
+    email: emailSchema,
+    otp: otpSchema,
+    password: passwordSchema,
+  })
+  .strict();
+
 export const userValidation = {
   updateProfile,
+  forgetPassword,
+  resetPassword,
 };

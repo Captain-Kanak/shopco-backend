@@ -16,9 +16,17 @@ router.patch(
   userController.updateProfile,
 );
 
-// router.post("/forgot-password", validateRequestBody(...), userController.forgotPassword);
+router.post(
+  "/forgot-password",
+  validateRequestBody(userValidation.forgetPassword),
+  userController.forgetPassword,
+);
 
-// router.post("/reset-password", validateRequestBody(...), userController.resetPassword);
+router.post(
+  "/reset-password",
+  validateRequestBody(userValidation.resetPassword),
+  userController.resetPassword,
+);
 
 router.get("/", authMiddleware(UserRole.ADMIN), userController.getUsers);
 
