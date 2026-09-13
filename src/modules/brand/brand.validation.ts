@@ -6,16 +6,6 @@ const nameSchema = z
   .min(1, "Name can't be empty")
   .max(255, "Name can't be more than 255 characters long");
 
-const slugSchema = z
-  .string({ error: "Slug must be a string" })
-  .trim()
-  .min(1, "Slug can't be empty")
-  .max(255, "Slug can't be more than 255 characters long")
-  .regex(
-    /^[a-z0-9-]+$/,
-    "Slug must contain only lowercase letters, numbers, and hyphens",
-  );
-
 const descriptionSchema = z
   .string({ error: "Description must be a string" })
   .trim()
@@ -24,7 +14,6 @@ const descriptionSchema = z
 const createBrand = z
   .object({
     name: nameSchema,
-    slug: slugSchema,
     description: descriptionSchema.optional(),
   })
   .strict();
@@ -32,7 +21,6 @@ const createBrand = z
 const updateBrand = z
   .object({
     name: nameSchema,
-    slug: slugSchema,
     description: descriptionSchema,
   })
   .partial()

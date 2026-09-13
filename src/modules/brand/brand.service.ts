@@ -10,20 +10,19 @@ import {
   QueryBuilderResult,
 } from "../../query-builder/query-builder.interface.js";
 import { brandConstant } from "./brand.constant.js";
+import { generateUniqueSlug } from "../../utils/generate-slug.js";
 
 const addBrand = async (payload: CreateBrand): Promise<Brand> => {
-  const existing = await prisma.brand.findFirst({
-    where: { slug: payload.slug },
+  const slug = generateUniqueSlug(payload.name);
+
+  const newBrand = await prisma.brand.create({
+    data: {
+      ...payload,
+      slug,
+    },
   });
 
-  if (existing) {
-    throw new AppError(
-      "A brand with this slug already exists",
-      status.CONFLICT,
-    );
-  }
-
-  return prisma.brand.create({ data: payload });
+  return newBrand;
 };
 
 const getBrands = async (
@@ -72,24 +71,16 @@ const updateBrandById = async (
     throw new AppError("Brand not found", status.NOT_FOUND);
   }
 
-  if (payload.slug && payload.slug !== brand.slug) {
-    const existing = await prisma.brand.findFirst({
-      where: { slug: payload.slug },
-    });
-
-    if (existing) {
-      throw new AppError(
-        "A brand with this slug already exists",
-        status.CONFLICT,
-      );
-    }
-  }
-
   if (payload.logo && brand.logo) {
     await deleteFromCloudinaryByUrl(brand.logo);
   }
 
-  return prisma.brand.update({ where: { id: brandId }, data: payload });
+  const updatedBrand = await prisma.brand.update({
+    where: { id: brandId },
+    data: payload,
+  });
+
+  return updatedBrand;
 };
 
 const deleteBrandById = async (brandId: string): Promise<Brand> => {
@@ -102,11 +93,6 @@ const deleteBrandById = async (brandId: string): Promise<Brand> => {
     throw new AppError("Brand not found", status.NOT_FOUND);
   }
 
-  // Brand is hard-deleted (see schema decision). Product.brandId is
-  // String? with onDelete: SetNull, so any products referencing this
-  // brand will automatically have brandId set to null — they are not
-  // deleted, just unbranded. No manual cleanup needed here; the DB
-  // relation handles it on the real DELETE below.
   if (brand.logo) {
     await deleteFromCloudinaryByUrl(brand.logo);
   }
