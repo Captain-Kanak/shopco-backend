@@ -127,11 +127,15 @@ const banUserById = async (userId: string): Promise<User> => {
 
 const deleteUserById = async (userId: string): Promise<User> => {
   const user = await prisma.user.findUnique({
-    where: { id: userId, deletedAt: null },
+    where: { id: userId },
   });
 
   if (!user) {
     throw new AppError("User not found", status.NOT_FOUND);
+  }
+
+  if (user.deletedAt !== null) {
+    throw new AppError("User is already deleted", status.CONFLICT);
   }
 
   const [deletedUser] = await prisma.$transaction([
