@@ -97,10 +97,13 @@ const googleLoginSuccess = async (
 
 const logoutUser = async (
   requestHeaders: Record<string, string | string[] | undefined>,
-): Promise<void> => {
-  await auth.api.signOut({
+): Promise<Headers> => {
+  const result = await auth.api.signOut({
     headers: fromNodeHeaders(requestHeaders),
+    returnHeaders: true,
   });
+
+  return result.headers;
 };
 
 export const authService = {

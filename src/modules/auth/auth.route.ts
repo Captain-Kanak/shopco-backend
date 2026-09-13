@@ -18,8 +18,6 @@ router.post(
   authController.verifyEmail,
 );
 
-// TODO : add access token and refresh token to cookie
-
 router.post(
   "/login",
   validateRequestBody(authValidation.loginUser),

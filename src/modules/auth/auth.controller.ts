@@ -4,7 +4,6 @@ import { authService } from "./auth.service.js";
 import { sendResponse } from "../../utils/send-response.js";
 import status from "http-status";
 import { env } from "../../config/env.js";
-import { tokenUtils } from "../../utils/token.js";
 import AppError from "../../errors/app-error.js";
 
 const registerUser = catchAsync(async (req: Request, res: Response) => {
@@ -90,9 +89,11 @@ const getMe = catchAsync(async (req: Request, res: Response) => {
 });
 
 const logoutUser = catchAsync(async (req: Request, res: Response) => {
-  await authService.logoutUser(req.headers);
+  const responseHeaders = await authService.logoutUser(req.headers);
 
-  tokenUtils.clearBetterAuthSessionCookie(res);
+  responseHeaders.getSetCookie().forEach((cookie) => {
+    res.append("Set-Cookie", cookie);
+  });
 
   return sendResponse(res, {
     statusCode: status.OK,
