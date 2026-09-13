@@ -49,19 +49,22 @@ const verifyEmail = async (payload: VerifyEmail): Promise<void> => {
 
 const loginUser = async (
   payload: LoginUser,
-): Promise<{ token: string; user: User }> => {
+): Promise<{ token: string; user: User; headers: Headers }> => {
   const { email, password } = payload;
 
   let result;
 
   try {
-    result = await auth.api.signInEmail({ body: { email, password } });
+    result = await auth.api.signInEmail({
+      body: { email, password },
+      returnHeaders: true,
+    });
   } catch {
     throw new AppError("Invalid email or password", status.UNAUTHORIZED);
   }
 
   const user = await prisma.user.findUnique({
-    where: { id: result.user.id, deletedAt: null },
+    where: { id: result.response.user.id, deletedAt: null },
   });
 
   if (!user) {
@@ -75,7 +78,7 @@ const loginUser = async (
     );
   }
 
-  return { token: result.token, user };
+  return { token: result.response.token, user, headers: result.headers };
 };
 
 const googleLoginSuccess = async (

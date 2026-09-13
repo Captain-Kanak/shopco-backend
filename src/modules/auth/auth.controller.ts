@@ -31,13 +31,17 @@ const verifyEmail = catchAsync(async (req: Request, res: Response) => {
 const loginUser = catchAsync(async (req: Request, res: Response) => {
   const result = await authService.loginUser(req.body);
 
-  tokenUtils.setBetterAuthSessionCookie(res, result.token);
+  const cookieHeaders = result.headers.getSetCookie();
+  cookieHeaders.forEach((cookie) => res.append("Set-Cookie", cookie));
 
   return sendResponse(res, {
     statusCode: status.OK,
     success: true,
     message: "User logged in successfully",
-    data: result,
+    data: {
+      token: result.token,
+      user: result.user,
+    },
   });
 });
 
