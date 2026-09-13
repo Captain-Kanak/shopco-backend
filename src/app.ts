@@ -1,6 +1,7 @@
 import express, {
   Application,
   json,
+  raw,
   Request,
   Response,
   urlencoded,
@@ -13,6 +14,7 @@ import path from "path";
 import cookieParser from "cookie-parser";
 import { toNodeHandler } from "better-auth/node";
 import { auth } from "./lib/auth.js";
+import { paymentController } from "./modules/payment/payment.controller.js";
 
 const app: Application = express();
 
@@ -22,6 +24,13 @@ app.set("views", path.join(process.cwd(), "src/templates"));
 
 // query parser
 app.set("query parser", "extended");
+
+// stripe webhook
+app.use(
+  "/api/v1/payments/webhook",
+  raw({ type: "application/json" }),
+  paymentController.handleStripeWebhook,
+);
 
 // middlewares
 app.use(json());

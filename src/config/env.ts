@@ -22,6 +22,8 @@ interface ENV {
   CLOUDINARY_API_KEY: string;
   CLOUDINARY_API_SECRET: string;
   CLOUDINARY_FOLDER: string;
+  STRIPE_SECRET_KEY: string;
+  STRIPE_WEBHOOK_SECRET: string;
 }
 
 function loadEnv(): ENV {
@@ -44,6 +46,8 @@ function loadEnv(): ENV {
     "CLOUDINARY_API_KEY",
     "CLOUDINARY_API_SECRET",
     "CLOUDINARY_FOLDER",
+    "STRIPE_SECRET_KEY",
+    "STRIPE_WEBHOOK_SECRET",
   ];
 
   requiredEnvVariables.forEach((envVariable) => {
@@ -75,6 +79,8 @@ function loadEnv(): ENV {
     CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY as string,
     CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET as string,
     CLOUDINARY_FOLDER: process.env.CLOUDINARY_FOLDER as string,
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY as string,
+    STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET as string,
   };
 }
 

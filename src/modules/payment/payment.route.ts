@@ -6,26 +6,13 @@ import { UserRole } from "@prisma/client";
 
 const router = Router();
 
-// --- Stripe webhook: fundamentally different auth model ---
-// Not session-based — verified via Stripe's signing secret against the raw
-// request body. Must use express.raw() here, NOT express.json(), because
-// Stripe's signature check needs the exact unparsed byte stream; if the
-// global express.json() middleware already parsed this body, verification
-// will fail. Register this route BEFORE any global JSON body parser touches
-// it, or exclude this path from that parser in app.ts.
-router.post(
-  "/webhook",
-  express.raw({ type: "application/json" }),
-//   paymentController.handleStripeWebhook,
-);
-
 // Create a Stripe payment intent for an order — any authenticated user,
 // scoped to their own order (service layer must verify the order belongs
 // to req.user.id before creating the intent).
 router.post(
-  "/create-payment-intent",
+  "/intent",
   authMiddleware(),
-//   paymentController.createPaymentIntent,
+  //   paymentController.createPaymentIntent,
 );
 
 // Get the caller's own payments (service layer branches to "all payments"
@@ -42,7 +29,7 @@ router.post(
 router.delete(
   "/:id",
   authMiddleware(UserRole.ADMIN),
-//   paymentController.deletePaymentById,
+  //   paymentController.deletePaymentById,
 );
 
 export { router as paymentRouter };
