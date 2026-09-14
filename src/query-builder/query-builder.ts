@@ -20,8 +20,10 @@ export class QueryBuilder<T, TWhereInput, TInclude> {
     private readonly queryParams: QueryBuilderParams,
     private readonly config: QueryBuilderConfig,
   ) {
-    this.findManyArgs = { where: { deletedAt: null } };
-    this.countArgs = { where: { deletedAt: null } };
+    const applySoftDelete = this.config.softDelete !== false;
+
+    this.findManyArgs = applySoftDelete ? { where: { deletedAt: null } } : {};
+    this.countArgs = applySoftDelete ? { where: { deletedAt: null } } : {};
   }
 
   pagination(): this {

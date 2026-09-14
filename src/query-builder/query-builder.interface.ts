@@ -68,6 +68,7 @@ export interface QueryBuilderConfig {
   includableFields: string[];
   sortableFields: string[];
   numericFields?: string[];
+  softDelete?: boolean;
 }
 
 export interface PaginationMeta {

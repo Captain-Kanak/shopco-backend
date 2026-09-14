@@ -49,6 +49,7 @@ const getBrands = async (
     selectableFields: brandConstant.selectableFields,
     includableFields: brandConstant.includableFields,
     sortableFields: brandConstant.sortableFields,
+    softDelete: false,
   });
 
   return queryBuilder
