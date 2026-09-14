@@ -7,7 +7,7 @@ export const generateUniqueSlug = (title: string) => {
     strict: true,
   });
 
-  const suffix = () => randomBytes(5).toString("hex");
+  const suffix = () => randomBytes(4).toString("hex");
 
   let slug = `${baseSlug}-${suffix()}`;
 

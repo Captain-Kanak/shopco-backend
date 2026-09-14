@@ -13,6 +13,17 @@ import { brandConstant } from "./brand.constant.js";
 import { generateUniqueSlug } from "../../utils/generate-slug.js";
 
 const addBrand = async (payload: CreateBrand): Promise<Brand> => {
+  const existing = await prisma.brand.findFirst({
+    where: { name: { equals: payload.name, mode: "insensitive" } },
+  });
+
+  if (existing) {
+    throw new AppError(
+      "A brand with this name already exists",
+      status.CONFLICT,
+    );
+  }
+
   const slug = generateUniqueSlug(payload.name);
 
   const newBrand = await prisma.brand.create({
@@ -71,6 +82,22 @@ const updateBrandById = async (
     throw new AppError("Brand not found", status.NOT_FOUND);
   }
 
+  if (payload.name && payload.name.toLowerCase() !== brand.name.toLowerCase()) {
+    const existingByName = await prisma.brand.findFirst({
+      where: {
+        name: { equals: payload.name, mode: "insensitive" },
+        id: { not: brandId },
+      },
+    });
+
+    if (existingByName) {
+      throw new AppError(
+        "A brand with this name already exists",
+        status.CONFLICT,
+      );
+    }
+  }
+
   if (payload.logo && brand.logo) {
     await deleteFromCloudinaryByUrl(brand.logo);
   }
@@ -91,6 +118,13 @@ const deleteBrandById = async (brandId: string): Promise<Brand> => {
 
   if (!brand) {
     throw new AppError("Brand not found", status.NOT_FOUND);
+  }
+
+  if (brand._count.products > 0) {
+    throw new AppError(
+      "Cannot delete a brand that still has products. Reassign or remove its products first.",
+      status.CONFLICT,
+    );
   }
 
   if (brand.logo) {
