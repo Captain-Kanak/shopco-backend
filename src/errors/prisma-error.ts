@@ -7,26 +7,30 @@ export const handlePrismaError = (
 ): ErrorResponse => {
   switch (err.code) {
     case "P2002": {
+      const driverError = (err.meta?.driverAdapterError as any)?.cause;
       const target = err.meta?.target;
-      const driverFields = (err.meta?.driverAdapterError as any)?.cause
-        ?.constraint?.fields;
 
-      const fields = (
-        Array.isArray(target)
-          ? target
-          : Array.isArray(driverFields)
-            ? driverFields
-            : typeof target === "string"
-              ? [target]
-              : []
-      ).map((f: string) => f.replace(/^"|"$/g, ""));
+      let fieldLabel = "unknown";
+
+      if (Array.isArray(target)) {
+        fieldLabel = target
+          .map((f: string) => f.replace(/^"|"$/g, ""))
+          .join(", ");
+      } else if (driverError?.constraint?.index) {
+        const indexName: string = driverError.constraint.index;
+        const table: string | undefined = driverError.table;
+
+        fieldLabel = table
+          ? indexName.replace(new RegExp(`^${table}_`), "").replace(/_key$/, "")
+          : indexName;
+      }
 
       return {
         statusCode: status.CONFLICT,
         message: "Duplicate value",
         errorSources: [
           {
-            path: fields.length ? fields.join(", ") : "unknown",
+            path: fieldLabel,
             message: "Already exists",
           },
         ],
