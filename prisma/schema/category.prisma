@@ -15,6 +15,7 @@ model Category {
     deletedAt DateTime?
 
     @@unique([slug])
+    @@unique([parentId, name])
     @@index([parentId])
     @@index([deletedAt])
     @@map("category")
