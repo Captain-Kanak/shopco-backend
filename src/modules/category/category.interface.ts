@@ -6,6 +6,6 @@ export interface CreateCategory {
 
 export interface UpdateCategory {
   name?: string;
-  parentId?: string;
+  parentId?: string | null;
   description?: string;
 }

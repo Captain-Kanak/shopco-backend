@@ -5,6 +5,7 @@ const nameSchema = z
     error: (issue) =>
       issue.input === undefined ? "Name is required" : "Name must be a string",
   })
+  .trim()
   .min(1, "Name is required")
   .max(100, "Name can't be more than 100 characters long");
 

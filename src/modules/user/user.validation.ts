@@ -1,9 +1,12 @@
 import * as z from "zod";
 
 const nameSchema = z
-  .string({ error: "Name must be a string" })
+  .string({
+    error: (issue) =>
+      issue.input === undefined ? "Name is required" : "Name must be a string",
+  })
   .trim()
-  .min(1, "Name can't be empty")
+  .min(1, "Name is required")
   .max(100, "Name can't be more than 100 characters long");
 
 const phoneSchema = z
@@ -11,7 +14,12 @@ const phoneSchema = z
   .regex(/^\+?[0-9]{7,15}$/, "Invalid phone number");
 
 const addressSchema = z
-  .string({ error: "Address must be a string" })
+  .string({
+    error: (issue) =>
+      issue.input === undefined
+        ? "Address is required"
+        : "Address must be a string",
+  })
   .trim()
   .min(1, "Address can't be empty")
   .max(500, "Address can't be more than 500 characters long");

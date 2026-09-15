@@ -11,76 +11,6 @@ import {
 import { categoryConstant } from "./category.constant.js";
 import { generateUniqueSlug } from "../../utils/generate-slug.js";
 
-const assertParentExists = async (parentId: string): Promise<void> => {
-  const parent = await prisma.category.findFirst({
-    where: { id: parentId, deletedAt: null },
-  });
-
-  if (!parent) {
-    throw new AppError("Parent category not found", status.NOT_FOUND);
-  }
-};
-
-const assertNoSiblingNameConflict = async (
-  name: string,
-  parentId: string | null,
-  excludeId?: string,
-): Promise<void> => {
-  const existing = await prisma.category.findFirst({
-    where: {
-      name: { equals: name, mode: "insensitive" },
-      parentId,
-      deletedAt: null,
-      ...(excludeId && { id: { not: excludeId } }),
-    },
-  });
-
-  if (existing) {
-    throw new AppError(
-      "A category with this name already exists under the same parent",
-      status.CONFLICT,
-    );
-  }
-};
-
-// Prevents assigning a category as its own descendant's child — e.g.
-// "Phones" cannot become the parent of "Electronics" if "Phones" is
-// currently a child of "Electronics", since that would create a cycle.
-const assertNoCircularReference = async (
-  categoryId: string,
-  newParentId: string,
-): Promise<void> => {
-  if (categoryId === newParentId) {
-    throw new AppError(
-      "A category cannot be its own parent",
-      status.BAD_REQUEST,
-    );
-  }
-
-  let currentId: string | null = newParentId;
-  const visited = new Set<string>();
-
-  while (currentId) {
-    if (currentId === categoryId) {
-      throw new AppError(
-        "This change would create a circular category hierarchy",
-        status.BAD_REQUEST,
-      );
-    }
-
-    if (visited.has(currentId)) break; // safety net against any pre-existing bad data
-    visited.add(currentId);
-
-    const current: { parentId: string | null } | null =
-      await prisma.category.findUnique({
-        where: { id: currentId },
-        select: { parentId: true },
-      });
-
-    currentId = current?.parentId ?? null;
-  }
-};
-
 const addCategory = async (payload: CreateCategory): Promise<Category> => {
   const parentId = payload.parentId ?? null;
 
@@ -123,8 +53,6 @@ const getCategories = async (
     .execute();
 };
 
-// Full nested hierarchy in one response — for storefront navigation/sidebar.
-// Fixed at 3 levels deep; extend the nested `include` if you need more.
 const getCategoryTree = async (): Promise<Category[]> => {
   return prisma.category.findMany({
     where: { deletedAt: null, parentId: null },
@@ -230,4 +158,71 @@ export const categoryService = {
   getCategoryById,
   updateCategoryById,
   deleteCategoryById,
+};
+
+const assertParentExists = async (parentId: string): Promise<void> => {
+  const parent = await prisma.category.findFirst({
+    where: { id: parentId, deletedAt: null },
+  });
+
+  if (!parent) {
+    throw new AppError("Parent category not found", status.NOT_FOUND);
+  }
+};
+
+const assertNoSiblingNameConflict = async (
+  name: string,
+  parentId: string | null,
+  excludeId?: string,
+): Promise<void> => {
+  const existing = await prisma.category.findFirst({
+    where: {
+      name: { equals: name, mode: "insensitive" },
+      parentId,
+      deletedAt: null,
+      ...(excludeId && { id: { not: excludeId } }),
+    },
+  });
+
+  if (existing) {
+    throw new AppError(
+      "A category with this name already exists under the same parent",
+      status.CONFLICT,
+    );
+  }
+};
+
+const assertNoCircularReference = async (
+  categoryId: string,
+  newParentId: string,
+): Promise<void> => {
+  if (categoryId === newParentId) {
+    throw new AppError(
+      "A category cannot be its own parent",
+      status.BAD_REQUEST,
+    );
+  }
+
+  let currentId: string | null = newParentId;
+  const visited = new Set<string>();
+
+  while (currentId) {
+    if (currentId === categoryId) {
+      throw new AppError(
+        "This change would create a circular category hierarchy",
+        status.BAD_REQUEST,
+      );
+    }
+
+    if (visited.has(currentId)) break;
+    visited.add(currentId);
+
+    const current: { parentId: string | null } | null =
+      await prisma.category.findUnique({
+        where: { id: currentId },
+        select: { parentId: true },
+      });
+
+    currentId = current?.parentId ?? null;
+  }
 };
