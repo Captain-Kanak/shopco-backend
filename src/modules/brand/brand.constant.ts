@@ -1,4 +1,4 @@
-const searchableFields: string[] = ["name", "slug"];
+const searchableFields: string[] = ["name"];
 
 const filterableFields: string[] = [];
 
