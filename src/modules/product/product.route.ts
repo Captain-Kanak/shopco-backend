@@ -1,16 +1,23 @@
 import { Router } from "express";
 import { productController } from "./product.controller.js";
 import { authMiddleware } from "../../middlewares/auth-middleware.js";
-import { multerUpload } from "../../config/multer.js";
 import { UserRole } from "@prisma/client";
+import { validateRequestBody } from "../../middlewares/zod-middleware.js";
+import { productValidation } from "./product.validation.js";
+import { optionalAuthMiddleware } from "../../middlewares/optional-auth-middleware.js";
 
 const router = Router();
 
-router.post("/", authMiddleware(UserRole.ADMIN), productController.addProduct);
+router.post(
+  "/",
+  authMiddleware(UserRole.ADMIN),
+  validateRequestBody(productValidation.createProduct),
+  productController.addProduct,
+);
 
-router.get("/", productController.getProducts);
+router.get("/", optionalAuthMiddleware(), productController.getProducts);
 
-router.get("/:id", productController.getProductById);
+router.get("/:id", optionalAuthMiddleware(), productController.getProductById);
 
 router.patch(
   "/:id",
