@@ -212,7 +212,27 @@ const updateProductById = async (
   });
 };
 
-const deleteProductById = () => {};
+const deleteProductById = async (productId: string): Promise<Product> => {
+  const product = await prisma.product.findFirst({
+    where: { id: productId, deletedAt: null },
+  });
+
+  if (!product) {
+    throw new AppError("Product not found", status.NOT_FOUND);
+  }
+
+  return prisma.$transaction(async (tx) => {
+    await tx.productVariant.updateMany({
+      where: { productId, deletedAt: null },
+      data: { deletedAt: new Date() },
+    });
+
+    return tx.product.update({
+      where: { id: productId },
+      data: { deletedAt: new Date() },
+    });
+  });
+};
 
 export const productService = {
   addProduct,
