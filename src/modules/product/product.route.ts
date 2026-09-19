@@ -22,6 +22,7 @@ router.get("/:id", optionalAuthMiddleware(), productController.getProductById);
 router.patch(
   "/:id",
   authMiddleware(UserRole.ADMIN),
+  validateRequestBody(productValidation.updateProduct),
   productController.updateProductById,
 );
 

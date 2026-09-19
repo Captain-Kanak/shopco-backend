@@ -41,7 +41,18 @@ const getProductById = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const updateProductById = catchAsync(async (req: Request, res: Response) => {});
+const updateProductById = catchAsync(async (req: Request, res: Response) => {
+  const id = req.params.id as string;
+
+  const result = await productService.updateProductById(id, req.body);
+
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Product updated successfully",
+    data: result,
+  });
+});
 
 const deleteProductById = catchAsync(async (req: Request, res: Response) => {});
 

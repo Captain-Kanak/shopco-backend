@@ -1,13 +1,8 @@
 import { ProductStatus } from "@prisma/client";
 
-export interface CreateProduct {
-  title: string;
-  description: string;
-  discountPercentage?: number;
-  status?: Extract<ProductStatus, "DRAFT" | "ACTIVE">;
-  brandId?: string;
-  categoryIds?: string[];
-  variants?: CreateProductVariant[];
+export interface CreateProductVariantAttribute {
+  name: string;
+  value: string;
 }
 
 export interface CreateProductVariant {
@@ -18,7 +13,21 @@ export interface CreateProductVariant {
   attributes?: CreateProductVariantAttribute[];
 }
 
-export interface CreateProductVariantAttribute {
-  name: string;
-  value: string;
+export interface CreateProduct {
+  title: string;
+  description: string;
+  discountPercentage?: number;
+  status?: Extract<ProductStatus, "DRAFT" | "ACTIVE">;
+  brandId?: string;
+  categoryIds?: string[];
+  variants?: CreateProductVariant[];
+}
+
+export interface UpdateProduct {
+  title?: string;
+  description?: string;
+  discountPercentage?: number;
+  status?: ProductStatus;
+  brandId?: string | null;
+  categoryIds?: string[];
 }

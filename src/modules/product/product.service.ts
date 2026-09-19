@@ -2,7 +2,7 @@ import status from "http-status";
 import AppError from "../../errors/app-error.js";
 import { prisma } from "../../lib/prisma.js";
 import { Prisma, Product, ProductStatus } from "@prisma/client";
-import { CreateProduct } from "./product.interface.js";
+import { CreateProduct, UpdateProduct } from "./product.interface.js";
 import { generateUniqueSlug } from "../../utils/generate-slug.js";
 import {
   QueryBuilderParams,
@@ -154,7 +154,63 @@ const getProductById = async (
   return product;
 };
 
-const updateProductById = () => {};
+const updateProductById = async (
+  productId: string,
+  payload: UpdateProduct,
+): Promise<Product> => {
+  const { brandId, categoryIds, ...productFields } = payload;
+
+  const product = await prisma.product.findFirst({
+    where: { id: productId, deletedAt: null },
+  });
+
+  if (!product) {
+    throw new AppError("Product not found", status.NOT_FOUND);
+  }
+
+  if (brandId) {
+    const brand = await prisma.brand.findUnique({ where: { id: brandId } });
+
+    if (!brand) {
+      throw new AppError("Brand not found", status.NOT_FOUND);
+    }
+  }
+
+  if (categoryIds?.length) {
+    const foundCategories = await prisma.category.findMany({
+      where: { id: { in: categoryIds }, deletedAt: null },
+      select: { id: true },
+    });
+
+    if (foundCategories.length !== categoryIds.length) {
+      throw new AppError("One or more categories not found", status.NOT_FOUND);
+    }
+  }
+
+  return prisma.$transaction(async (tx) => {
+    if (categoryIds !== undefined) {
+      await tx.productCategory.deleteMany({ where: { productId } });
+
+      if (categoryIds.length) {
+        await tx.productCategory.createMany({
+          data: categoryIds.map((categoryId) => ({ productId, categoryId })),
+        });
+      }
+    }
+
+    return tx.product.update({
+      where: { id: productId },
+      data: {
+        ...productFields,
+        ...(brandId !== undefined && { brandId }),
+      },
+      include: {
+        brand: true,
+        productCategories: { include: { category: true } },
+      },
+    });
+  });
+};
 
 const deleteProductById = () => {};
 

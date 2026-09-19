@@ -59,6 +59,19 @@ const createProduct = z
   })
   .strict();
 
+const updateProduct = z
+  .object({
+    title: titleSchema,
+    description: descriptionSchema,
+    discountPercentage: z.coerce.number().int().min(0).max(100),
+    status: z.enum(ProductStatus),
+    brandId: z.uuid().nullable(),
+    categoryIds: z.array(z.uuid()),
+  })
+  .partial()
+  .strict();
+
 export const productValidation = {
   createProduct,
+  updateProduct,
 };
