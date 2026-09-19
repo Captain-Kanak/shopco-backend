@@ -115,12 +115,10 @@ const getProducts = async (
     numericFields: productConstant.numericFields,
   });
 
-  const forcedWhere = isAdmin ? {} : { status: ProductStatus.ACTIVE };
-
   return queryBuilder
     .pagination()
     .sort()
-    .where(forcedWhere)
+    .where(isAdmin ? {} : { status: ProductStatus.ACTIVE })
     .search()
     .filter()
     .select()
