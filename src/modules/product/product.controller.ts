@@ -67,10 +67,43 @@ const deleteProductById = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const addVariantToProduct = catchAsync(async (req: Request, res: Response) => {
+  const id = req.params.id as string;
+
+  const result = await productService.addVariantToProduct(id, req.body);
+
+  sendResponse(res, {
+    statusCode: status.CREATED,
+    success: true,
+    message: "Variant added successfully",
+    data: result,
+  });
+});
+
+const updateVariantById = catchAsync(async (req: Request, res: Response) => {
+  const id = req.params.id as string;
+  const variantId = req.params.variantId as string;
+
+  const result = await productService.updateVariantById(
+    id,
+    variantId,
+    req.body,
+  );
+
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Variant updated successfully",
+    data: result,
+  });
+});
+
 export const productController = {
   addProduct,
   getProducts,
   getProductById,
   updateProductById,
   deleteProductById,
+  addVariantToProduct,
+  updateVariantById,
 };

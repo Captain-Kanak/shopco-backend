@@ -31,3 +31,19 @@ export interface UpdateProduct {
   brandId?: string | null;
   categoryIds?: string[];
 }
+
+export interface AddProductVariant {
+  price: number;
+  compareAtPrice?: number;
+  stock?: number;
+  weightGrams?: number;
+  attributes?: CreateProductVariantAttribute[];
+}
+
+export interface UpdateProductVariant {
+  price?: number;
+  compareAtPrice?: number;
+  stock?: number;
+  weightGrams?: number;
+  version: number;
+}

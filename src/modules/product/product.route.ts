@@ -32,17 +32,19 @@ router.delete(
   productController.deleteProductById,
 );
 
-// router.post(
-//   "/:id/variants",
-//   authMiddleware(UserRole.ADMIN),
-//   productController.addVariant,
-// );
+router.post(
+  "/:id/variants",
+  authMiddleware(UserRole.ADMIN),
+  validateRequestBody(productValidation.addVariant),
+  productController.addVariantToProduct,
+);
 
-// router.patch(
-//   "/:id/variants/:variantId",
-//   authMiddleware(UserRole.ADMIN),
-//   productController.updateVariant,
-// );
+router.patch(
+  "/:id/variants/:variantId",
+  authMiddleware(UserRole.ADMIN),
+  validateRequestBody(productValidation.updateVariant),
+  productController.updateVariantById,
+);
 
 // router.delete(
 //   "/:id/variants/:variantId",

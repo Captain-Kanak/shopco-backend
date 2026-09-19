@@ -1,8 +1,13 @@
 import status from "http-status";
 import AppError from "../../errors/app-error.js";
 import { prisma } from "../../lib/prisma.js";
-import { Prisma, Product, ProductStatus } from "@prisma/client";
-import { CreateProduct, UpdateProduct } from "./product.interface.js";
+import { Prisma, Product, ProductStatus, ProductVariant } from "@prisma/client";
+import {
+  AddProductVariant,
+  CreateProduct,
+  UpdateProduct,
+  UpdateProductVariant,
+} from "./product.interface.js";
 import { generateUniqueSlug } from "../../utils/generate-slug.js";
 import {
   QueryBuilderParams,
@@ -236,10 +241,115 @@ const deleteProductById = async (productId: string): Promise<Product> => {
   });
 };
 
+const addVariantToProduct = async (
+  productId: string,
+  payload: AddProductVariant,
+): Promise<ProductVariant> => {
+  const product = await prisma.product.findFirst({
+    where: { id: productId, deletedAt: null },
+  });
+
+  if (!product) {
+    throw new AppError("Product not found", status.NOT_FOUND);
+  }
+
+  if (payload.attributes?.length) {
+    const existingVariants = await prisma.productVariant.findMany({
+      where: { productId, deletedAt: null },
+      include: { attributes: true },
+    });
+
+    const newSignature = payload.attributes
+      .map((a) => `${a.name.toLowerCase()}:${a.value.toLowerCase()}`)
+      .sort()
+      .join("|");
+
+    const collides = existingVariants.some((variant) => {
+      const existingSignature = variant.attributes
+        .map((a) => `${a.name.toLowerCase()}:${a.value.toLowerCase()}`)
+        .sort()
+        .join("|");
+      return existingSignature === newSignature;
+    });
+
+    if (collides) {
+      throw new AppError(
+        "A variant with these exact attributes already exists on this product",
+        status.CONFLICT,
+      );
+    }
+  }
+
+  const sku = generateSku(product.title, payload.attributes);
+
+  return prisma.productVariant.create({
+    data: {
+      productId,
+      sku,
+      price: payload.price,
+      compareAtPrice: payload.compareAtPrice,
+      stock: payload.stock ?? 0,
+      weightGrams: payload.weightGrams,
+      ...(payload.attributes?.length && {
+        attributes: { create: payload.attributes },
+      }),
+    },
+    include: { attributes: true },
+  });
+};
+
+const updateVariantById = async (
+  productId: string,
+  variantId: string,
+  payload: UpdateProductVariant,
+): Promise<ProductVariant> => {
+  const { version, ...updateFields } = payload;
+
+  const variant = await prisma.productVariant.findFirst({
+    where: { id: variantId, productId, deletedAt: null },
+  });
+
+  if (!variant) {
+    throw new AppError("Variant not found", status.NOT_FOUND);
+  }
+
+  if (updateFields.compareAtPrice !== undefined) {
+    const effectivePrice = updateFields.price ?? Number(variant.price);
+    if (updateFields.compareAtPrice <= effectivePrice) {
+      throw new AppError(
+        "compareAtPrice must be greater than price",
+        status.BAD_REQUEST,
+      );
+    }
+  }
+
+  const result = await prisma.productVariant.updateMany({
+    where: { id: variantId, productId, version },
+    data: {
+      ...updateFields,
+      version: { increment: 1 },
+    },
+  });
+
+  if (result.count === 0) {
+    throw new AppError(
+      "This variant was modified by someone else. Please refresh and try again.",
+      status.CONFLICT,
+    );
+  }
+
+  return prisma.productVariant.findUniqueOrThrow({
+    where: { id: variantId },
+    include: { attributes: true },
+  });
+};
+
 export const productService = {
   addProduct,
   getProducts,
   getProductById,
   updateProductById,
   deleteProductById,
+  addVariantToProduct,
+  updateVariantById,
 };
