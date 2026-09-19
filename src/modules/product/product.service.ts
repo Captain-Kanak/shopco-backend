@@ -221,15 +221,17 @@ const deleteProductById = async (productId: string): Promise<Product> => {
     throw new AppError("Product not found", status.NOT_FOUND);
   }
 
+  const deletedAt = new Date();
+
   return prisma.$transaction(async (tx) => {
     await tx.productVariant.updateMany({
       where: { productId, deletedAt: null },
-      data: { deletedAt: new Date() },
+      data: { deletedAt },
     });
 
     return tx.product.update({
       where: { id: productId },
-      data: { deletedAt: new Date() },
+      data: { deletedAt },
     });
   });
 };
