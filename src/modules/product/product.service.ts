@@ -344,6 +344,24 @@ const updateVariantById = async (
   });
 };
 
+const deleteVariantById = async (
+  productId: string,
+  variantId: string,
+): Promise<ProductVariant> => {
+  const variant = await prisma.productVariant.findFirst({
+    where: { id: variantId, productId, deletedAt: null },
+  });
+
+  if (!variant) {
+    throw new AppError("Variant not found", status.NOT_FOUND);
+  }
+
+  return prisma.productVariant.update({
+    where: { id: variantId },
+    data: { deletedAt: new Date() },
+  });
+};
+
 export const productService = {
   addProduct,
   getProducts,
@@ -352,4 +370,5 @@ export const productService = {
   deleteProductById,
   addVariantToProduct,
   updateVariantById,
+  deleteVariantById,
 };

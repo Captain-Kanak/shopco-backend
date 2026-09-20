@@ -46,11 +46,11 @@ router.patch(
   productController.updateVariantById,
 );
 
-// router.delete(
-//   "/:id/variants/:variantId",
-//   authMiddleware(UserRole.ADMIN),
-//   productController.deleteVariant,
-// );
+router.delete(
+  "/:id/variants/:variantId",
+  authMiddleware(UserRole.ADMIN),
+  productController.deleteVariantById,
+);
 
 // router.post(
 //   "/:id/images",
