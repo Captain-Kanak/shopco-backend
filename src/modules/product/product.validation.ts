@@ -71,20 +71,6 @@ const updateProduct = z
   .partial()
   .strict();
 
-const addVariant = z
-  .object({
-    price: z.coerce.number().positive("Price must be greater than 0"),
-    compareAtPrice: z.coerce.number().positive().optional(),
-    stock: z.coerce.number().int().min(0).optional(),
-    weightGrams: z.coerce.number().int().positive().optional(),
-    attributes: z.array(attributeSchema).optional(),
-  })
-  .strict()
-  .refine((data) => !data.compareAtPrice || data.compareAtPrice > data.price, {
-    message: "compareAtPrice must be greater than price",
-    path: ["compareAtPrice"],
-  });
-
 const updateVariant = z
   .object({
     price: z.coerce
@@ -101,6 +87,6 @@ const updateVariant = z
 export const productValidation = {
   createProduct,
   updateProduct,
-  addVariant,
+  addVariant: variantSchema,
   updateVariant,
 };
