@@ -1,7 +1,13 @@
 import status from "http-status";
 import AppError from "../../errors/app-error.js";
 import { prisma } from "../../lib/prisma.js";
-import { Prisma, Product, ProductStatus, ProductVariant } from "@prisma/client";
+import {
+  Prisma,
+  Product,
+  ProductImage,
+  ProductStatus,
+  ProductVariant,
+} from "@prisma/client";
 import {
   AddProductVariant,
   CreateProduct,
@@ -16,6 +22,7 @@ import {
 import { QueryBuilder } from "../../query-builder/query-builder.js";
 import { productConstant } from "./product.constant.js";
 import { generateSku } from "../../utils/generate-sku.js";
+import { deleteFromCloudinaryByUrl } from "../../config/cloudinary.js";
 
 const addProduct = async (payload: CreateProduct): Promise<Product> => {
   const {
@@ -362,6 +369,62 @@ const deleteVariantById = async (
   });
 };
 
+const addImagesToProduct = async (
+  productId: string,
+  files: Express.Multer.File[],
+  variantId: string | undefined,
+): Promise<ProductImage[]> => {
+  const product = await prisma.product.findFirst({
+    where: { id: productId, deletedAt: null },
+  });
+
+  if (!product) {
+    throw new AppError("Product not found", status.NOT_FOUND);
+  }
+
+  if (variantId) {
+    const variant = await prisma.productVariant.findFirst({
+      where: { id: variantId, productId, deletedAt: null },
+    });
+
+    if (!variant) {
+      throw new AppError("Variant not found", status.NOT_FOUND);
+    }
+  }
+
+  const existingCount = await prisma.productImage.count({
+    where: { productId, variantId: variantId ?? null },
+  });
+
+  const images = await prisma.productImage.createManyAndReturn({
+    data: files.map((file, index) => ({
+      productId,
+      variantId: variantId ?? null,
+      url: file.path,
+      position: existingCount + index,
+    })),
+  });
+
+  return images;
+};
+
+const deleteImageById = async (
+  productId: string,
+  imageId: string,
+): Promise<ProductImage> => {
+  const image = await prisma.productImage.findFirst({
+    where: { id: imageId, productId },
+  });
+
+  if (!image) {
+    throw new AppError("Image not found", status.NOT_FOUND);
+  }
+
+  await deleteFromCloudinaryByUrl(image.url);
+
+  return prisma.productImage.delete({ where: { id: imageId } });
+};
+
 export const productService = {
   addProduct,
   getProducts,
@@ -371,4 +434,6 @@ export const productService = {
   addVariantToProduct,
   updateVariantById,
   deleteVariantById,
+  addImagesToProduct,
+  deleteImageById,
 };

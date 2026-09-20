@@ -5,6 +5,7 @@ import { UserRole } from "@prisma/client";
 import { validateRequestBody } from "../../middlewares/zod-middleware.js";
 import { productValidation } from "./product.validation.js";
 import { optionalAuthMiddleware } from "../../middlewares/optional-auth-middleware.js";
+import { multerUpload } from "../../config/multer.js";
 
 const router = Router();
 
@@ -52,17 +53,18 @@ router.delete(
   productController.deleteVariantById,
 );
 
-// router.post(
-//   "/:id/images",
-//   authMiddleware(UserRole.ADMIN),
-//   multerUpload.array("files"),
-//   productController.addImages,
-// );
+router.post(
+  "/:id/images",
+  authMiddleware(UserRole.ADMIN),
+  multerUpload.array("files"),
+  validateRequestBody(productValidation.addImages),
+  productController.addImagesToProduct,
+);
 
-// router.delete(
-//   "/:id/images/:imageId",
-//   authMiddleware(UserRole.ADMIN),
-//   productController.deleteImage,
-// );
+router.delete(
+  "/:id/images/:imageId",
+  authMiddleware(UserRole.ADMIN),
+  productController.deleteImageById,
+);
 
 export { router as productRouter };

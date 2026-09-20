@@ -84,9 +84,16 @@ const updateVariant = z
   })
   .strict();
 
+const addImages = z
+  .object({
+    variantId: z.uuid().optional(),
+  })
+  .strict();
+
 export const productValidation = {
   createProduct,
   updateProduct,
   addVariant: variantSchema,
   updateVariant,
+  addImages,
 };

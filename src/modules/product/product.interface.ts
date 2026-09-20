@@ -47,3 +47,7 @@ export interface UpdateProductVariant {
   weightGrams?: number;
   version: number;
 }
+
+export interface AddProductImages {
+  variantId?: string;
+}

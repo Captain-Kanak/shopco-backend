@@ -4,6 +4,7 @@ import { productService } from "./product.service.js";
 import { sendResponse } from "../../utils/send-response.js";
 import status from "http-status";
 import { UserRole } from "@prisma/client";
+import AppError from "../../errors/app-error.js";
 
 const addProduct = catchAsync(async (req: Request, res: Response) => {
   const result = await productService.addProduct(req.body);
@@ -112,6 +113,44 @@ const deleteVariantById = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const addImagesToProduct = catchAsync(async (req: Request, res: Response) => {
+  if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
+    throw new AppError(
+      "At least one image file is required",
+      status.BAD_REQUEST,
+    );
+  }
+
+  const id = req.params.id as string;
+
+  const result = await productService.addImagesToProduct(
+    id,
+    req.files as Express.Multer.File[],
+    req.body.variantId,
+  );
+
+  sendResponse(res, {
+    statusCode: status.CREATED,
+    success: true,
+    message: "Images uploaded successfully",
+    data: result,
+  });
+});
+
+const deleteImageById = catchAsync(async (req: Request, res: Response) => {
+  const id = req.params.id as string;
+  const imageId = req.params.imageId as string;
+
+  const result = await productService.deleteImageById(id, imageId);
+
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Image deleted successfully",
+    data: result,
+  });
+});
+
 export const productController = {
   addProduct,
   getProducts,
@@ -121,4 +160,6 @@ export const productController = {
   addVariantToProduct,
   updateVariantById,
   deleteVariantById,
+  addImagesToProduct,
+  deleteImageById,
 };
