@@ -278,10 +278,26 @@ const updateOrderStatus = async (
   });
 };
 
+const deleteOrderById = async (orderId: string): Promise<Order> => {
+  const order = await prisma.order.findFirst({
+    where: { id: orderId, deletedAt: null },
+  });
+
+  if (!order) {
+    throw new AppError("Order not found", status.NOT_FOUND);
+  }
+
+  return prisma.order.update({
+    where: { id: orderId },
+    data: { deletedAt: new Date() },
+  });
+};
+
 export const orderService = {
   addOrder,
   getOrders,
   getOrderById,
   cancelOrder,
   updateOrderStatus,
+  deleteOrderById,
 };

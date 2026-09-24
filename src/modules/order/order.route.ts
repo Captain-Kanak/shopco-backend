@@ -32,10 +32,10 @@ router.patch(
   orderController.updateOrderStatus,
 );
 
-// router.delete(
-//   "/:id",
-//   authMiddleware(UserRole.ADMIN),
-//   orderController.deleteOrderById, // still needs building — soft delete, admin-only cleanup
-// );
+router.delete(
+  "/:id",
+  authMiddleware(UserRole.ADMIN),
+  orderController.deleteOrderById,
+);
 
 export { router as orderRouter };

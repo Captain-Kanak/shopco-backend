@@ -75,10 +75,24 @@ const updateOrderStatus = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const deleteOrderById = catchAsync(async (req: Request, res: Response) => {
+  const id = req.params.id as string;
+
+  const result = await orderService.deleteOrderById(id);
+
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Order deleted successfully",
+    data: result,
+  });
+});
+
 export const orderController = {
   addOrder,
   getOrders,
   getOrderById,
   cancelOrder,
   updateOrderStatus,
+  deleteOrderById,
 };
