@@ -6,3 +6,7 @@ export interface CreateOrder {
   shippingPostalCode?: string;
   phone: string;
 }
+
+export interface CancelOrder {
+  cancelReason?: string;
+}

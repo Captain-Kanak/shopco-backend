@@ -1,15 +1,18 @@
 import status from "http-status";
 import AppError from "../../errors/app-error.js";
 import { prisma } from "../../lib/prisma.js";
-import { Order } from "@prisma/client";
-import { CreateOrder } from "./order.interface.js";
-import { randomBytes } from "crypto";
-
-const generateOrderNumber = (): string => {
-  const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-  const randomPart = randomBytes(3).toString("hex").toUpperCase();
-  return `SHOPCO-${datePart}-${randomPart}`;
-};
+import {
+  Order,
+  OrderStatus,
+  PaymentStatus,
+  Prisma,
+  ProductStatus,
+} from "@prisma/client";
+import { CancelOrder, CreateOrder } from "./order.interface.js";
+import { orderConstant } from "./order.constant.js";
+import { QueryBuilderParams } from "../../query-builder/query-builder.interface.js";
+import { QueryBuilder } from "../../query-builder/query-builder.js";
+import { generateOrderNumber } from "../../utils/generate-order-number.js";
 
 const addOrder = async (
   userId: string,
@@ -28,15 +31,13 @@ const addOrder = async (
     throw new AppError("Your cart is empty", status.BAD_REQUEST);
   }
 
-  // Validate every item BEFORE touching the database — fail the whole
-  // checkout if anything is unavailable, rather than partially processing.
   for (const item of cartItems) {
     const { variant } = item;
 
     if (
       variant.deletedAt ||
       variant.product.deletedAt ||
-      variant.product.status !== "ACTIVE"
+      variant.product.status !== ProductStatus.ACTIVE
     ) {
       throw new AppError(
         `"${variant.product.title}" is no longer available and must be removed from your cart`,
@@ -60,9 +61,6 @@ const addOrder = async (
   const orderNumber = generateOrderNumber();
 
   return prisma.$transaction(async (tx) => {
-    // Decrement stock with optimistic locking — if another checkout beat
-    // us to it between the pre-check above and now, this throws, and the
-    // whole transaction rolls back automatically.
     for (const item of cartItems) {
       const result = await tx.productVariant.updateMany({
         where: { id: item.variantId, version: item.variant.version },
@@ -119,6 +117,171 @@ const addOrder = async (
   });
 };
 
+const getOrders = async (
+  query: QueryBuilderParams,
+  userId: string,
+  isAdmin: boolean,
+) => {
+  const queryBuilder = new QueryBuilder<
+    Order,
+    Prisma.OrderWhereInput,
+    Prisma.OrderInclude
+  >(prisma.order, query, {
+    searchableFields: orderConstant.searchableFields,
+    filterableFields: isAdmin
+      ? orderConstant.filterableFields
+      : orderConstant.filterableFields.filter((f) => f !== "userId"),
+    selectableFields: orderConstant.selectableFields,
+    includableFields: orderConstant.includableFields,
+    sortableFields: orderConstant.sortableFields,
+    numericFields: orderConstant.numericFields,
+  });
+
+  const forcedWhere = isAdmin ? {} : { userId };
+
+  return queryBuilder
+    .pagination()
+    .sort()
+    .where(forcedWhere)
+    .search()
+    .filter()
+    .select()
+    .include({})
+    .execute();
+};
+
+const getOrderById = async (
+  orderId: string,
+  userId: string,
+  isAdmin: boolean,
+): Promise<Order> => {
+  const order = await prisma.order.findFirst({
+    where: {
+      id: orderId,
+      deletedAt: null,
+      ...(!isAdmin && { userId }),
+    },
+    include: {
+      orderItems: { include: { orderItemAttributes: true } },
+      payment: true,
+    },
+  });
+
+  if (!order) {
+    throw new AppError("Order not found", status.NOT_FOUND);
+  }
+
+  return order;
+};
+
+const cancelOrder = async (
+  orderId: string,
+  userId: string,
+  payload: CancelOrder,
+): Promise<Order> => {
+  const order = await prisma.order.findFirst({
+    where: { id: orderId, userId, deletedAt: null },
+    include: { orderItems: true },
+  });
+
+  if (!order) {
+    throw new AppError("Order not found", status.NOT_FOUND);
+  }
+
+  if (order.orderStatus !== OrderStatus.PENDING) {
+    throw new AppError("Only pending orders can be cancelled", status.CONFLICT);
+  }
+
+  return prisma.$transaction(async (tx) => {
+    for (const item of order.orderItems) {
+      if (item.variantId) {
+        await tx.productVariant.update({
+          where: { id: item.variantId },
+          data: {
+            stock: { increment: item.quantity },
+            version: { increment: 1 },
+          },
+        });
+      }
+    }
+
+    return tx.order.update({
+      where: { id: orderId },
+      data: {
+        orderStatus: OrderStatus.CANCELLED,
+        cancelledAt: new Date(),
+        cancelReason: payload.cancelReason,
+      },
+    });
+  });
+};
+
+const updateOrderStatus = async (
+  orderId: string,
+  payload: { orderStatus?: OrderStatus; paymentStatus?: PaymentStatus },
+): Promise<Order> => {
+  const order = await prisma.order.findFirst({
+    where: { id: orderId, deletedAt: null },
+    include: { orderItems: true },
+  });
+
+  if (!order) {
+    throw new AppError("Order not found", status.NOT_FOUND);
+  }
+
+  const timestampUpdates: Record<string, Date> = {};
+
+  if (payload.orderStatus === OrderStatus.SHIPPED && !order.shippedAt) {
+    timestampUpdates.shippedAt = new Date();
+  }
+
+  if (payload.orderStatus === OrderStatus.DELIVERED && !order.deliveredAt) {
+    timestampUpdates.deliveredAt = new Date();
+  }
+
+  if (payload.paymentStatus === PaymentStatus.PAID && !order.paidAt) {
+    timestampUpdates.paidAt = new Date();
+  }
+
+  if (
+    payload.orderStatus === OrderStatus.CANCELLED &&
+    order.orderStatus !== OrderStatus.CANCELLED
+  ) {
+    return prisma.$transaction(async (tx) => {
+      for (const item of order.orderItems) {
+        if (item.variantId) {
+          await tx.productVariant.update({
+            where: { id: item.variantId },
+            data: {
+              stock: { increment: item.quantity },
+              version: { increment: 1 },
+            },
+          });
+        }
+      }
+
+      return tx.order.update({
+        where: { id: orderId },
+        data: {
+          ...payload,
+          ...timestampUpdates,
+          cancelledAt: new Date(),
+          cancelReason: "Cancelled by admin",
+        },
+      });
+    });
+  }
+
+  return prisma.order.update({
+    where: { id: orderId },
+    data: { ...payload, ...timestampUpdates },
+  });
+};
+
 export const orderService = {
   addOrder,
+  getOrders,
+  getOrderById,
+  cancelOrder,
+  updateOrderStatus,
 };

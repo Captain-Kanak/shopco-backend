@@ -1,3 +1,4 @@
+import { OrderStatus, PaymentStatus } from "@prisma/client";
 import * as z from "zod";
 
 const createOrder = z
@@ -11,6 +12,23 @@ const createOrder = z
   })
   .strict();
 
+const cancelOrder = z
+  .object({
+    cancelReason: z.string().trim().max(500).optional(),
+  })
+  .partial()
+  .strict();
+
+const updateOrderStatus = z
+  .object({
+    orderStatus: z.enum(OrderStatus),
+    paymentStatus: z.enum(PaymentStatus),
+  })
+  .partial()
+  .strict();
+
 export const orderValidation = {
   createOrder,
+  cancelOrder,
+  updateOrderStatus,
 };
