@@ -7,18 +7,19 @@ model Payment {
     method PaymentMethod
 
     orderId String
-    order   Order  @relation(fields: [orderId], references: [id])
+    order   Order  @relation(fields: [orderId], references: [id], onDelete: Restrict)
 
     userId String
-    user   User   @relation(fields: [userId], references: [id])
+    user   User   @relation(fields: [userId], references: [id], onDelete: Restrict)
 
     createdAt DateTime  @default(now())
     updatedAt DateTime  @updatedAt
     deletedAt DateTime?
 
-    @@unique([orderId])
     @@unique([transactionId])
+    @@index([orderId])
     @@index([userId])
+    @@index([status])
     @@index([deletedAt])
     @@map("payment")
 }

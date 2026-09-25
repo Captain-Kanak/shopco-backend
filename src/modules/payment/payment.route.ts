@@ -1,18 +1,17 @@
 import { Router } from "express";
-import express from "express";
-// import { paymentController } from "./payment.controller.js";
 import { authMiddleware } from "../../middlewares/auth-middleware.js";
 import { UserRole } from "@prisma/client";
+import { paymentController } from "./payment.controller.js";
+import { validateRequestBody } from "../../middlewares/zod-middleware.js";
+import { paymentValidation } from "./payment.validation.js";
 
 const router = Router();
 
-// Create a Stripe payment intent for an order — any authenticated user,
-// scoped to their own order (service layer must verify the order belongs
-// to req.user.id before creating the intent).
 router.post(
   "/intent",
   authMiddleware(),
-  //   paymentController.createPaymentIntent,
+  validateRequestBody(paymentValidation.createPaymentIntent),
+  paymentController.createPaymentIntent,
 );
 
 // Get the caller's own payments (service layer branches to "all payments"

@@ -2,42 +2,74 @@ import { Request } from "express";
 import AppError from "../../errors/app-error.js";
 import status from "http-status";
 import { env } from "../../config/env.js";
-import Stripe from "stripe";
 import { prisma } from "../../lib/prisma.js";
-import { PaymentMethod, PaymentStatus } from "@prisma/client";
+import { OrderStatus, PaymentMethod, PaymentStatus } from "@prisma/client";
 import { CreatePaymentIntent } from "./payment.interface.js";
-
-const stripe = new Stripe(env.STRIPE_SECRET_KEY);
+import { stripe } from "../../lib/stripe.js";
+import Stripe from "stripe";
 
 const createPaymentIntent = async (
   userId: string,
   payload: CreatePaymentIntent,
-): Promise<string> => {
+): Promise<{ clientSecret: string; paymentId: string }> => {
   const order = await prisma.order.findFirst({
     where: { id: payload.orderId, userId, deletedAt: null },
-    include: { orderItems: true },
   });
 
   if (!order) {
     throw new AppError("Order not found", status.NOT_FOUND);
   }
 
-  const amountInCents = Number(order.totalAmount) * 100;
+  if (order.paymentStatus === PaymentStatus.PAID) {
+    throw new AppError("This order has already been paid", status.CONFLICT);
+  }
+
+  if (order.orderStatus === OrderStatus.CANCELLED) {
+    throw new AppError("Cannot pay for a cancelled order", status.CONFLICT);
+  }
+
+  const existingPendingPayment = await prisma.payment.findFirst({
+    where: { orderId: order.id, status: PaymentStatus.UNPAID },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (existingPendingPayment) {
+    const existingIntent = await stripe.paymentIntents.retrieve(
+      existingPendingPayment.transactionId!,
+    );
+
+    if (existingIntent.status !== "canceled" && existingIntent.client_secret) {
+      return {
+        clientSecret: existingIntent.client_secret,
+        paymentId: existingPendingPayment.id,
+      };
+    }
+  }
+
+  const amountInSmallestUnit = Math.round(Number(order.totalAmount) * 100);
 
   const paymentIntent = await stripe.paymentIntents.create({
-    amount: amountInCents,
-    currency: "usd",
+    amount: amountInSmallestUnit,
+    currency: "bdt",
     automatic_payment_methods: { enabled: true },
     metadata: {
       userId,
       orderId: order.id,
+      orderNumber: order.orderNumber,
     },
   });
 
-  await prisma.payment.create({
+  if (!paymentIntent.client_secret) {
+    throw new AppError(
+      "Failed to initialize payment",
+      status.INTERNAL_SERVER_ERROR,
+    );
+  }
+
+  const payment = await prisma.payment.create({
     data: {
-      userId,
       orderId: order.id,
+      userId,
       amount: order.totalAmount,
       transactionId: paymentIntent.id,
       method: PaymentMethod.STRIPE,
@@ -45,9 +77,7 @@ const createPaymentIntent = async (
     },
   });
 
-  const secret = paymentIntent.client_secret as string;
-
-  return secret;
+  return { clientSecret: paymentIntent.client_secret, paymentId: payment.id };
 };
 
 const handleStripeWebhook = async (req: Request): Promise<void> => {
