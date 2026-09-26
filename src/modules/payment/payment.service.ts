@@ -29,7 +29,11 @@ const createPaymentIntent = async (
   }
 
   const existingPendingPayment = await prisma.payment.findFirst({
-    where: { orderId: order.id, status: PaymentStatus.UNPAID },
+    where: {
+      orderId: order.id,
+      status: PaymentStatus.UNPAID,
+      paymentMethod: PaymentMethod.STRIPE,
+    },
     orderBy: { createdAt: "desc" },
   });
 
@@ -38,7 +42,16 @@ const createPaymentIntent = async (
       existingPendingPayment.transactionId!,
     );
 
-    if (existingIntent.status !== "canceled" && existingIntent.client_secret) {
+    const reusableStatuses = [
+      "requires_payment_method",
+      "requires_confirmation",
+      "requires_action",
+    ];
+
+    if (
+      reusableStatuses.includes(existingIntent.status) &&
+      existingIntent.client_secret
+    ) {
       return {
         clientSecret: existingIntent.client_secret,
         paymentId: existingPendingPayment.id,
