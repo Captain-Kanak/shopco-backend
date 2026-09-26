@@ -21,9 +21,21 @@ const createPaymentIntent = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const handleStripeWebhook = catchAsync(
-  async (req: Request, res: Response) => {},
-);
+const handleStripeWebhook = catchAsync(async (req: Request, res: Response) => {
+  const signature = req.headers["stripe-signature"];
+
+  if (!signature || typeof signature !== "string") {
+    throw new AppError("Missing Stripe signature", status.BAD_REQUEST);
+  }
+
+  await paymentService.handleStripeWebhookEvent(req.body, signature);
+
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: "Payment confirmed successfully",
+  });
+});
 
 export const paymentController = {
   createPaymentIntent,

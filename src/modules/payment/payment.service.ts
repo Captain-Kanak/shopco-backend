@@ -1,4 +1,3 @@
-import { Request } from "express";
 import AppError from "../../errors/app-error.js";
 import status from "http-status";
 import { env } from "../../config/env.js";
@@ -7,6 +6,81 @@ import { OrderStatus, PaymentMethod, PaymentStatus } from "@prisma/client";
 import { CreatePaymentIntent } from "./payment.interface.js";
 import { stripe } from "../../lib/stripe.js";
 import Stripe from "stripe";
+
+const constructWebhookEvent = (
+  rawBody: Buffer,
+  signature: string,
+): Stripe.Event => {
+  try {
+    return stripe.webhooks.constructEvent(
+      rawBody,
+      signature,
+      env.STRIPE_WEBHOOK_SECRET,
+    );
+  } catch (error) {
+    throw new AppError("Invalid webhook signature", status.BAD_REQUEST);
+  }
+};
+
+const handlePaymentIntentSucceeded = async (
+  paymentIntent: Stripe.PaymentIntent,
+): Promise<void> => {
+  const { orderId } = paymentIntent.metadata;
+
+  if (!orderId) {
+    console.error(
+      "Webhook received with no orderId in metadata:",
+      paymentIntent.id,
+    );
+    return;
+  }
+
+  const payment = await prisma.payment.findUnique({
+    where: { transactionId: paymentIntent.id },
+  });
+
+  if (!payment) {
+    console.error("Webhook received for unknown payment:", paymentIntent.id);
+    return;
+  }
+
+  if (payment.status === PaymentStatus.PAID) {
+    return;
+  }
+
+  await prisma.$transaction([
+    prisma.payment.update({
+      where: { id: payment.id },
+      data: { status: PaymentStatus.PAID },
+    }),
+    prisma.order.update({
+      where: { id: orderId },
+      data: {
+        paymentStatus: PaymentStatus.PAID,
+        paidAt: new Date(),
+        orderStatus: OrderStatus.PROCESSING,
+      },
+    }),
+  ]);
+};
+
+const handlePaymentIntentFailed = async (
+  paymentIntent: Stripe.PaymentIntent,
+): Promise<void> => {
+  const payment = await prisma.payment.findUnique({
+    where: { transactionId: paymentIntent.id },
+  });
+
+  if (!payment) {
+    console.error("Webhook received for unknown payment:", paymentIntent.id);
+    return;
+  }
+
+  await prisma.payment.update({
+    where: { id: payment.id },
+    data: { status: PaymentStatus.FAILED },
+  });
+};
 
 const createPaymentIntent = async (
   userId: string,
@@ -32,7 +106,7 @@ const createPaymentIntent = async (
     where: {
       orderId: order.id,
       status: PaymentStatus.UNPAID,
-      paymentMethod: PaymentMethod.STRIPE,
+      method: PaymentMethod.STRIPE,
     },
     orderBy: { createdAt: "desc" },
   });
@@ -93,84 +167,20 @@ const createPaymentIntent = async (
   return { clientSecret: paymentIntent.client_secret, paymentId: payment.id };
 };
 
-const handleStripeWebhook = async (req: Request): Promise<void> => {
-  const signature = req.headers["stripe-signature"];
-
-  if (!signature) {
-    throw new AppError("Missing Stripe signature", status.BAD_REQUEST);
-  }
-
-  const event = stripe.webhooks.constructEvent(
-    req.body,
-    signature,
-    env.STRIPE_WEBHOOK_SECRET,
-  );
+const handleStripeWebhookEvent = async (
+  rawBody: Buffer,
+  signature: string,
+): Promise<void> => {
+  const event = constructWebhookEvent(rawBody, signature);
 
   switch (event.type) {
-    case "payment_intent.succeeded": {
-      const paymentIntent = event.data.object as Stripe.PaymentIntent;
-
-      // const payment = await prisma.payment.findFirst({
-      //   where: { transactionId: paymentIntent.id },
-      // });
-
-      const payment = await prisma.payment.findUnique({
-        where: { transactionId: paymentIntent.id },
-      });
-
-      if (!payment) {
-        break;
-      }
-
-      await prisma.$transaction(async (tx) => {
-        await tx.payment.update({
-          where: { transactionId: paymentIntent.id },
-          data: {
-            status: PaymentStatus.PAID,
-          },
-        });
-
-        await tx.order.update({
-          where: { id: payment.orderId },
-          data: {
-            paymentStatus: PaymentStatus.PAID,
-            paidAt: new Date(),
-          },
-        });
-      });
-
+    case "payment_intent.succeeded":
+      await handlePaymentIntentSucceeded(event.data.object);
       break;
-    }
 
-    case "payment_intent.payment_failed": {
-      const paymentIntent = event.data.object as Stripe.PaymentIntent;
-
-      const payment = await prisma.payment.findUnique({
-        where: { transactionId: paymentIntent.id },
-      });
-
-      if (!payment) {
-        break;
-      }
-
-      await prisma.$transaction(async (tx) => {
-        await tx.payment.update({
-          where: { transactionId: paymentIntent.id },
-          data: {
-            status: PaymentStatus.FAILED,
-          },
-        });
-
-        await tx.order.update({
-          where: { id: payment.orderId },
-          data: {
-            paymentStatus: PaymentStatus.FAILED,
-          },
-        });
-      });
-
+    case "payment_intent.payment_failed":
+      await handlePaymentIntentFailed(event.data.object);
       break;
-    }
 
     default:
       break;
@@ -179,5 +189,5 @@ const handleStripeWebhook = async (req: Request): Promise<void> => {
 
 export const paymentService = {
   createPaymentIntent,
-  handleStripeWebhook,
+  handleStripeWebhookEvent,
 };
